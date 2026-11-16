@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#050b14" />
+    <meta
+      name="description"
+      content="Interaktive Designvorschau für SkiTrip 2027 in Hochkrimml"
+    />
+    <title>SkiTrip 2027 · Designvorschau</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="prototype.js" defer></script>
+  </head>
+  <body data-mode="anticipation">
+    <svg class="icon-sprite" aria-hidden="true">
+      <symbol id="icon-mountain" viewBox="0 0 24 24">
+        <path d="m3 20 6-10 3 5 2-3 7 8H3Z" />
+        <path d="m7.5 12.5 1.5 1 1.2-1.4" />
+      </symbol>
+      <symbol id="icon-cloud-snow" viewBox="0 0 24 24">
+        <path
+          d="M17.5 17H8a5 5 0 1 1 1.7-9.7A6 6 0 0 1 21 10a4 4 0 0 1-3.5 7Z"
+        />
+        <path d="M8 20h.01M12 19v.01M16 20h.01" />
+      </symbol>
+      <symbol id="icon-wind" viewBox="0 0 24 24">
+        <path d="M3 8h10a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h7" />
+      </symbol>
+      <symbol id="icon-lift" viewBox="0 0 24 24">
+        <path d="m3 6 18-2M8 5v6M16 4v7M6 11h12l-1 6H7l-1-6ZM9 17v3M15 17v3" />
+      </symbol>
+      <symbol id="icon-route" viewBox="0 0 24 24">
+        <circle cx="6" cy="19" r="2" />
+        <circle cx="18" cy="5" r="2" />
+        <path d="M8 19h3a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h7" />
+      </symbol>
+      <symbol id="icon-camera" viewBox="0 0 24 24">
+        <path
+          d="M14.5 5 13 3h-2L9.5 5H5a2 2 0 0 0-2 2v11h18V7a2 2 0 0 0-2-2h-4.5Z"
+        />
+        <circle cx="12" cy="12" r="3" />
+      </symbol>
+      <symbol id="icon-arrow" viewBox="0 0 24 24">
+        <path d="M5 12h14M13 6l6 6-6 6" />
+      </symbol>
+    </svg>
+
+    <div class="preview-banner" role="note">
+      <span class="preview-dot"></span>
+      Phase 2 · Designvorschau mit Beispieldaten
+    </div>
+
+    <header class="hero">
+      <div class="hero-image" aria-hidden="true"></div>
+      <div class="hero-shade" aria-hidden="true"></div>
+      <div class="snow" aria-hidden="true"></div>
+
+      <nav class="nav shell" aria-label="Hauptnavigation">
+        <a class="brand" href="#top" aria-label="SkiTrip 2027 Startseite">
+          <span class="brand-mark">
+            <svg><use href="#icon-mountain"></use></svg>
+          </span>
+          <span>SKITRIP <b>2027</b></span>
+        </a>
+
+        <div class="mode-switch" role="group" aria-label="Vorschaumodus">
+          <button class="mode-button is-active" data-set-mode="anticipation">
+            Vorfreude
+          </button>
+          <button class="mode-button" data-set-mode="trip">Im Skiurlaub</button>
+        </div>
+
+        <a class="nav-link" href="#conditions">Bedingungen</a>
+      </nav>
+
+      <div class="hero-content shell" id="top">
+        <div class="hero-copy">
+          <p class="eyebrow">
+            <span class="eyebrow-line"></span>
+            Zillertal Arena · Austria
+          </p>
+          <p class="trip-date">Ab 10. Januar 2027</p>
+          <h1 class="anticipation-title">Hochkrimml<br /><em>2027</em></h1>
+          <h1 class="trip-title">It's Ski<br /><em>Time!</em></h1>
+          <p class="hero-lede anticipation-title">
+            Die Berge rufen. Dein Countdown in eine Woche voller Pulverschnee,
+            klarer Luft und erster Spuren.
+          </p>
+          <p class="hero-lede trip-title">
+            Alles für deinen Skitag – Wetter, Schnee und offizieller
+            Gebietstatus auf einen Blick.
+          </p>
+        </div>
+
+        <section
+          class="countdown-card anticipation-title"
+          aria-labelledby="countdown-label"
+        >
+          <div class="countdown-head">
+            <div>
+              <p class="card-kicker">Noch bis zur Abfahrt</p>
+              <h2 id="countdown-label">Die Vorfreude läuft</h2>
+            </div>
+          </div>
+          <div class="countdown" aria-live="off">
+            <div><strong data-time="days">00</strong><span>Tage</span></div>
+            <i>:</i>
+            <div><strong data-time="hours">00</strong><span>Stunden</span></div>
+            <i>:</i>
+            <div>
+              <strong data-time="minutes">00</strong><span>Minuten</span>
+            </div>
+            <i>:</i>
+            <div>
+              <strong data-time="seconds">00</strong><span>Sekunden</span>
+            </div>
+          </div>
+          <div class="countdown-foot">
+            <span>So., 10. Januar · 00:00 Uhr</span>
+            <a href="#forecast">Wettertrend ansehen <span>→</span></a>
+          </div>
+        </section>
+
+        <section class="trip-glance trip-title" aria-label="Schnellübersicht">
+          <div class="live-heading">
+            <span class="live-pulse"></span>
+            <span>Dein Skitag auf einen Blick</span>
+            <span class="status-badge badge-demo">Demo</span>
+          </div>
+          <div class="glance-grid">
+            <article>
+              <span>Am Berg</span><strong>−7°</strong
+              ><small>Gefühlt −12°</small>
+            </article>
+            <article>
+              <span>Wind</span><strong>18</strong><small>km/h · mäßig</small>
+            </article>
+            <article>
+              <span>Sicht</span><strong>Gut</strong
+              ><small>leicht bewölkt</small>
+            </article>
+          </div>
+          <a class="primary-link" href="#conditions"
+            >Alle Bedingungen <span>→</span></a
+          >
+        </section>
+      </div>
+
+      <a class="scroll-cue" href="#conditions">
+        <span>Dashboard entdecken</span><i></i>
+      </a>
+    </header>
+
+    <main>
+      <section class="section shell" id="conditions">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow dark">
+              <span class="eyebrow-line"></span>Aktuelle Bedingungen
+            </p>
+            <h2>Dein Berg.<br /><em>Ein Blick.</em></h2>
+          </div>
+          <p class="section-intro">
+            Klare Zustände statt Zahlenrauschen. Jede Information zeigt, ob sie
+            Prognose, offizieller Bericht oder noch nicht verbunden ist.
+          </p>
+        </div>
+
+        <div class="condition-grid">
+          <article class="data-card weather-card">
+            <div class="card-topline">
+              <div class="icon-box cyan">
+                <svg><use href="#icon-cloud-snow"></use></svg>
+              </div>
+              <div>
+                <p class="card-label">Wetter Hochkrimml</p>
+                <p class="card-meta">Modellprognose · Beispiel</p>
+              </div>
+              <span class="status-badge badge-demo">Demo</span>
+            </div>
+            <div class="weather-main">
+              <div><strong>−4°</strong><span>Leichter Schneefall</span></div>
+              <svg class="weather-symbol" viewBox="0 0 24 24">
+                <use href="#icon-cloud-snow"></use>
+              </svg>
+            </div>
+            <div class="weather-details">
+              <div>
+                <svg><use href="#icon-wind"></use></svg><span>Wind</span
+                ><strong>14 km/h</strong>
+              </div>
+              <div>
+                <span class="detail-icon">≈</span><span>Gefühlt</span
+                ><strong>−9°</strong>
+              </div>
+              <div>
+                <span class="detail-icon">↗</span><span>Böen</span
+                ><strong>27 km/h</strong>
+              </div>
+            </div>
+            <div class="card-source">
+              <span>Open-Meteo geplant</span><span>Beispieldaten</span>
+            </div>
+          </article>
+
+          <article class="data-card status-card">
+            <div class="card-topline">
+              <div class="icon-box blue">
+                <svg><use href="#icon-mountain"></use></svg>
+              </div>
+              <span class="status-badge badge-muted">Nicht verbunden</span>
+            </div>
+            <p class="card-label">Offizieller Schnee</p>
+            <div class="unavailable-value">—</div>
+            <p class="unavailable-copy">Keine offiziellen Daten verfügbar</p>
+            <div class="mini-metrics">
+              <span>Berg <b>—</b></span
+              ><span>Tal <b>—</b></span>
+            </div>
+            <a
+              class="card-action"
+              href="https://www.zillertalarena.com/info-service/livecams-wetter/schneebericht/"
+              target="_blank"
+              rel="noreferrer"
+              >Offiziellen Bericht öffnen <span>↗</span></a
+            >
+          </article>
+
+          <article class="data-card status-card">
+            <div class="card-topline">
+              <div class="icon-box turquoise">
+                <svg><use href="#icon-route"></use></svg>
+              </div>
+              <span class="status-badge badge-muted">Nicht verbunden</span>
+            </div>
+            <p class="card-label">Geöffnete Pisten</p>
+            <div class="unavailable-value">— <small>/ 150 km</small></div>
+            <p class="unavailable-copy">Offizieller Feed noch offen</p>
+            <div class="progress-track"><span style="width: 0%"></span></div>
+            <div class="card-source">
+              <span>Zillertal Arena</span><span>Kein Demo-Wert</span>
+            </div>
+          </article>
+
+          <article class="data-card status-card lift-card">
+            <div class="card-topline">
+              <div class="icon-box violet">
+                <svg><use href="#icon-lift"></use></svg>
+              </div>
+              <span class="status-badge badge-muted">Nicht verbunden</span>
+            </div>
+            <p class="card-label">Lifte Hochkrimml</p>
+            <div class="ring-wrap">
+              <div class="progress-ring">
+                <span>—</span><small>von —</small>
+              </div>
+              <p>Offizieller Gebietsstatus wird nach Freigabe angebunden.</p>
+            </div>
+            <div class="card-source">
+              <span>Intermaps angefragt</span><span>Keine API</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section forecast-section" id="forecast">
+        <div class="shell">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow dark">
+                <span class="eyebrow-line"></span>7-Tage-Ausblick
+              </p>
+              <h2>Der Berg<br /><em>voraus.</em></h2>
+            </div>
+            <div class="forecast-note">
+              <span class="status-badge badge-demo">Demo</span>
+              <p>Layout mit Beispieldaten,<br />noch keine Live-Prognose.</p>
+            </div>
+          </div>
+
+          <div
+            class="forecast-strip"
+            role="list"
+            aria-label="Beispielhafte 7-Tage-Prognose"
+          >
+            <article class="day-card is-today" role="listitem">
+              <p>Heute</p>
+              <span>04. Nov</span><svg><use href="#icon-cloud-snow"></use></svg
+              ><strong>−4°</strong><small>−9°</small><b>2 cm</b>
+            </article>
+            <article class="day-card" role="listitem">
+              <p>Do</p>
+              <span>05. Nov</span><svg><use href="#icon-cloud-snow"></use></svg
+              ><strong>−2°</strong><small>−7°</small><b>5 cm</b>
+            </article>
+            <article class="day-card" role="listitem">
+              <p>Fr</p>
+              <span>06. Nov</span><svg><use href="#icon-wind"></use></svg
+              ><strong>1°</strong><small>−5°</small><b>0 cm</b>
+            </article>
+            <article class="day-card" role="listitem">
+              <p>Sa</p>
+              <span>07. Nov</span><span class="sun-symbol">☀</span
+              ><strong>3°</strong><small>−4°</small><b>0 cm</b>
+            </article>
+            <article class="day-card" role="listitem">
+              <p>So</p>
+              <span>08. Nov</span><svg><use href="#icon-cloud-snow"></use></svg
+              ><strong>0°</strong><small>−6°</small><b>8 cm</b>
+            </article>
+            <article class="day-card" role="listitem">
+              <p>Mo</p>
+              <span>09. Nov</span><svg><use href="#icon-cloud-snow"></use></svg
+              ><strong>−3°</strong><small>−8°</small><b>12 cm</b>
+            </article>
+            <article class="day-card" role="listitem">
+              <p>Di</p>
+              <span>10. Nov</span><span class="sun-symbol">☀</span
+              ><strong>−1°</strong><small>−7°</small><b>1 cm</b>
+            </article>
+          </div>
+
+          <div class="lower-grid">
+            <article class="snow-chart-card">
+              <div class="panel-heading">
+                <div>
+                  <p class="card-kicker">Modellprognose</p>
+                  <h3>Erwarteter Neuschnee</h3>
+                </div>
+                <span class="status-badge badge-demo">Demo</span>
+              </div>
+              <div
+                class="chart"
+                aria-label="Beispielgrafik: erwarteter Neuschnee in Zentimetern"
+              >
+                <div class="y-axis">
+                  <span>12 cm</span><span>8 cm</span><span>4 cm</span
+                  ><span>0</span>
+                </div>
+                <div class="bars">
+                  <div style="--h: 17%"><i></i><b>2</b><span>Mi</span></div>
+                  <div style="--h: 42%"><i></i><b>5</b><span>Do</span></div>
+                  <div style="--h: 0%"><i></i><b>0</b><span>Fr</span></div>
+                  <div style="--h: 0%"><i></i><b>0</b><span>Sa</span></div>
+                  <div style="--h: 67%"><i></i><b>8</b><span>So</span></div>
+                  <div class="peak" style="--h: 100%">
+                    <i></i><b>12</b><span>Mo</span>
+                  </div>
+                  <div style="--h: 8%"><i></i><b>1</b><span>Di</span></div>
+                </div>
+              </div>
+              <p class="chart-caption">
+                Wettermodell · nicht mit offizieller Schneehöhe verwechseln
+              </p>
+            </article>
+
+            <article class="webcam-card">
+              <div class="webcam-overlay"></div>
+              <div class="webcam-content">
+                <div class="icon-box frosted">
+                  <svg><use href="#icon-camera"></use></svg>
+                </div>
+                <div>
+                  <p class="card-kicker">Live aus Hochkrimml</p>
+                  <h3>Ein Blick auf<br />den Berg.</h3>
+                </div>
+                <a
+                  href="https://www.zillertalarena.com/info-service/livecams-wetter/livecams/"
+                  target="_blank"
+                  rel="noreferrer"
+                  >Offizielle Livecams <svg><use href="#icon-arrow"></use></svg
+                ></a>
+                <small>Externer Link · keine ungeprüfte Einbettung</small>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="shell footer-grid">
+        <div>
+          <a class="brand" href="#top"
+            ><span class="brand-mark"
+              ><svg><use href="#icon-mountain"></use></svg></span
+            ><span>SKITRIP <b>2027</b></span></a
+          >
+          <p>Ein persönliches Dashboard für Hochkrimml.</p>
+        </div>
+        <div>
+          <span>Reiseziel</span><strong>Hochkrimml</strong
+          ><small>Zillertal Arena · Österreich</small>
+        </div>
+        <div>
+          <span>Datenkonzept</span><strong>Wetter · Open-Meteo</strong
+          ><small>Resort · offizieller Bericht</small>
+        </div>
+        <div class="footer-status">
+          <span class="preview-dot"></span>
+          <p>Designvorschau<br /><small>Keine Live-Daten</small></p>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
