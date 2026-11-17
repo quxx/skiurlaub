@@ -1,29 +1,35 @@
 {
-  "name": "skitrip-2027-hochkrimml",
+  "name": "skiurlaub",
   "private": true,
-  "version": "0.1.0",
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=24"
+  },
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "typecheck": "tsc -b --pretty false"
-  },
-  "dependencies": {
-    "leaflet": "^1.9.4",
-    "lucide-react": "^1.68.0",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "dev": "pnpm --filter @skiurlaub/mobile dev",
+    "dev:ui": "pnpm --filter @skiurlaub/mobile dev",
+    "dev:api": "node scripts/api-dev.mjs",
+    "build": "pnpm --filter @skiurlaub/mobile build && pnpm --filter @skiurlaub/api build",
+    "preview": "pnpm --filter @skiurlaub/mobile preview",
+    "android:sync": "pnpm --filter @skiurlaub/mobile build && pnpm --filter @skiurlaub/mobile exec cap sync android",
+    "android:build": "node scripts/android.mjs",
+    "android:install": "node scripts/android.mjs --install",
+    "android:smoke": "node scripts/android-smoke.mjs",
+    "android:auth-smoke": "node scripts/android-auth-smoke.mjs",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint apps packages scripts --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm --filter @skiurlaub/mobile test && pnpm --filter @skiurlaub/api test",
+    "test:e2e": "pnpm --filter @skiurlaub/mobile test:e2e"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.3.4",
-    "@types/leaflet": "^1.9.21",
-    "@types/node": "^26.6.6",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.2.1",
-    "tailwindcss": "^4.3.4",
-    "typescript": "^7.0.2",
-    "vite": "^8.3.5"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.15.0",
+    "eslint-plugin-react-hooks": "^7.0.0",
+    "globals": "^16.5.0",
+    "prettier": "^3.6.0",
+    "typescript-eslint": "^8.46.0"
   }
 }

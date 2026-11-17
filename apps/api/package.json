@@ -1,0 +1,26 @@
+{
+  "name": "@skiurlaub/api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --env local --ip 127.0.0.1 --port 8787",
+    "build": "wrangler deploy --dry-run --outdir dist --env=",
+    "typecheck": "tsc --noEmit",
+    "test": "pnpm build && vitest run",
+    "test:serve": "pnpm build && node test/server.mjs",
+    "db:migrate": "wrangler d1 migrations apply DB --local --env local"
+  },
+  "dependencies": {
+    "@skiurlaub/shared": "workspace:*",
+    "jose": "^6.2.17"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261117.1",
+    "@types/node": "^26.6.6",
+    "miniflare": "^4.20260730.0",
+    "typescript": "~6.0.0",
+    "vitest": "^5.1.0",
+    "wrangler": "^4.164.0"
+  }
+}

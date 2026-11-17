@@ -1,0 +1,37 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "skiurlaub-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-17",
+  "workers_dev": false,
+  "preview_urls": false,
+  "vars": {
+    "ENVIRONMENT": "production",
+    "APP_ORIGIN": "https://configure-before-deployment.invalid",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "skiurlaub-local",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "env": {
+    "local": {
+      "vars": {
+        "ENVIRONMENT": "local",
+        "APP_ORIGIN": "http://127.0.0.1:5173",
+        "ENABLE_LOCAL_AUTH": "true",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "skiurlaub-local",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "migrations",
+        },
+      ],
+    },
+  },
+}

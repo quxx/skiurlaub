@@ -1,0 +1,3 @@
+# Optional: stable local HMAC key. Never use this placeholder in production.
+# AUTH_HMAC_SECRET=replace-with-a-random-secret-of-at-least-32-characters
+# Production also requires an approved mail-service binding and private ALLOWED_EMAILS.

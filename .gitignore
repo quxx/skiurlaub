@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-production/
 .env
 .env.*
 !.env.example
@@ -7,3 +8,15 @@ dist/
 *.log
 .DS_Store
 Thumbs.db
+playwright-report/
+test-results/
+*.tsbuildinfo
+.wrangler/
+.dev.vars*
+!.dev.vars.example
+artifacts/
+**/android/.gradle/
+**/android/.kotlin/
+**/android/local.properties
+**/android/**/build/
+apps/api/wrangler.production.jsonc

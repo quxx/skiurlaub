@@ -1,0 +1,111 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: Roboto, 'Noto Sans', system-ui, sans-serif;
+  --color-midnight-950: var(--app-bg);
+  --color-navy-900: var(--surface);
+  --color-navy-800: var(--surface-high);
+  --color-ice-50: var(--ink);
+  --color-ice-200: var(--muted);
+  --color-glacier-200: var(--primary);
+  --color-glacier-300: var(--primary);
+  --color-glacier-400: var(--primary);
+  --color-turquoise-200: var(--positive);
+  --color-turquoise-300: var(--positive);
+  --color-turquoise-400: var(--positive);
+  --color-amber-200: var(--warning);
+  --color-amber-300: var(--warning);
+}
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    background: var(--app-bg);
+    color: var(--ink);
+    overscroll-behavior-y: none;
+  }
+  body {
+    margin: 0;
+    min-width: 320px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  button,
+  input,
+  select {
+    font: inherit;
+  }
+  button,
+  select {
+    cursor: pointer;
+  }
+  button,
+  select,
+  input {
+    min-height: 48px;
+  }
+  a,
+  button,
+  select {
+    -webkit-tap-highlight-color: transparent;
+  }
+  a {
+    color: inherit;
+  }
+  h1,
+  h2,
+  h3,
+  p {
+    margin: 0;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  :focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 3px;
+  }
+  main:focus {
+    outline: none;
+  }
+  button:disabled {
+    cursor: default;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@layer components {
+  .button.google-sign-in {
+    min-height: 48px;
+    padding: 0 12px 0 2px;
+    gap: 0;
+    background: #f2f2f2;
+    color: #1f1f1f;
+    border: 1px solid transparent;
+    font-family: 'Google Sans', Roboto, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .google-sign-in img {
+    flex: none;
+    width: 40px;
+    height: 40px;
+  }
+}

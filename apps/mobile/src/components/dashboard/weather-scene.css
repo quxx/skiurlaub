@@ -1,0 +1,306 @@
+/* Illustrated, animated weather backdrop for the dashboard hero.
+   Only transform/opacity are animated; everything stops for reduced motion. */
+.weather-scene {
+  --sky-top: #1f63ad;
+  --sky-bottom: #5fa8e0;
+  --m1: #5d86b3;
+  --m2: #3f6490;
+  --m3: #243f5e;
+  --cap: #f4f8fc;
+  --cloud: #fff;
+  --cloud-op: 0.9;
+  --precip: #cfe3f5;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
+  animation: ws-fade-in 500ms ease-out;
+}
+/* Keeps white text readable on every sky. */
+.weather-scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 0.2),
+    transparent 38%,
+    rgb(0 0 0 / 0.38)
+  );
+}
+.weather-scene svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.ws-m1 {
+  fill: var(--m1);
+}
+.ws-m2 {
+  fill: var(--m2);
+}
+.ws-m3,
+.ws-trees path {
+  fill: var(--m3);
+}
+.ws-trees path {
+  filter: brightness(0.8);
+}
+.ws-cap path {
+  fill: var(--cap);
+  opacity: 0.9;
+}
+.ws-cloud-shape path {
+  fill: var(--cloud);
+  opacity: var(--cloud-op);
+}
+.ws-cloud {
+  animation: ws-drift linear infinite;
+}
+.ws-glow {
+  animation: ws-glow 7s ease-in-out infinite alternate;
+}
+.ws-star {
+  fill: #fff;
+  animation: ws-twinkle ease-in-out infinite;
+}
+.ws-drop {
+  stroke: var(--precip);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  opacity: 0.75;
+  animation: ws-rain linear infinite;
+}
+.ws-flake {
+  fill: #fff;
+  opacity: 0.9;
+  animation: ws-snow linear infinite;
+}
+.ws-fog-a {
+  animation: ws-fog 16s ease-in-out infinite alternate;
+}
+.ws-fog-b {
+  animation: ws-fog 22s ease-in-out infinite alternate-reverse;
+  opacity: 0.9;
+}
+.ws-flash {
+  opacity: 0;
+  animation: ws-flash 8s linear infinite;
+}
+
+/* Palettes: [kind][day|night] */
+.weather-scene[data-kind='clear'][data-day='true'] {
+  --sky-top: #1f63ad;
+  --sky-bottom: #5fa8e0;
+}
+.weather-scene[data-kind='partly'][data-day='true'] {
+  --sky-top: #2f6fb3;
+  --sky-bottom: #79aedb;
+  --m1: #62829f;
+  --m2: #456482;
+  --m3: #2a415a;
+  --cap: #eef4fa;
+  --cloud-op: 0.95;
+}
+.weather-scene[data-kind='overcast'][data-day='true'] {
+  --sky-top: #5d6b7a;
+  --sky-bottom: #94a1ae;
+  --m1: #6f7f90;
+  --m2: #55657a;
+  --m3: #364453;
+  --cap: #dfe6ed;
+  --cloud: #cfd6de;
+  --cloud-op: 0.95;
+}
+.weather-scene[data-kind='fog'][data-day='true'] {
+  --sky-top: #7d8a96;
+  --sky-bottom: #b4bfc8;
+  --m1: #8f9ca8;
+  --m2: #75838f;
+  --m3: #56636f;
+  --cap: #e8edf1;
+  --cloud: #dde3e8;
+  --cloud-op: 0.8;
+}
+.weather-scene[data-kind='rain'][data-day='true'] {
+  --sky-top: #3f4d5c;
+  --sky-bottom: #6d7c8b;
+  --m1: #55677a;
+  --m2: #405264;
+  --m3: #28374a;
+  --cap: #c9d3dc;
+  --cloud: #8693a0;
+  --cloud-op: 0.95;
+}
+.weather-scene[data-kind='snow'][data-day='true'] {
+  --sky-top: #5b7088;
+  --sky-bottom: #9db0c3;
+  --m1: #7a8fa5;
+  --m2: #5e7389;
+  --m3: #3a4c60;
+  --cap: #fff;
+  --cloud: #dbe3ec;
+  --cloud-op: 0.95;
+}
+.weather-scene[data-kind='storm'][data-day='true'] {
+  --sky-top: #262d3a;
+  --sky-bottom: #4a5565;
+  --m1: #3d4858;
+  --m2: #2e3846;
+  --m3: #1c2430;
+  --cap: #9aa6b5;
+  --cloud: #4d5868;
+  --cloud-op: 1;
+}
+.weather-scene[data-kind='clear'][data-day='false'] {
+  --sky-top: #07142e;
+  --sky-bottom: #1e3b66;
+  --m1: #2c4668;
+  --m2: #1d3151;
+  --m3: #0f1c33;
+  --cap: #b9cbe6;
+  --cloud: #5a7096;
+  --cloud-op: 0.5;
+}
+.weather-scene[data-kind='partly'][data-day='false'] {
+  --sky-top: #0a1a38;
+  --sky-bottom: #2a4670;
+  --m1: #2c4668;
+  --m2: #1d3151;
+  --m3: #0f1c33;
+  --cap: #b9cbe6;
+  --cloud: #6b7fa3;
+  --cloud-op: 0.8;
+}
+.weather-scene[data-kind='overcast'][data-day='false'] {
+  --sky-top: #1a2333;
+  --sky-bottom: #3a475b;
+  --m1: #33425a;
+  --m2: #26334a;
+  --m3: #151e2e;
+  --cap: #8d9db3;
+  --cloud: #4a566a;
+  --cloud-op: 0.95;
+}
+.weather-scene[data-kind='fog'][data-day='false'] {
+  --sky-top: #2a3442;
+  --sky-bottom: #556374;
+  --m1: #46546a;
+  --m2: #36445a;
+  --m3: #222c3c;
+  --cap: #8a98ab;
+  --cloud: #6a7686;
+  --cloud-op: 0.8;
+}
+.weather-scene[data-kind='rain'][data-day='false'] {
+  --sky-top: #131a26;
+  --sky-bottom: #2f3b4b;
+  --m1: #2b384c;
+  --m2: #1f2a3b;
+  --m3: #111925;
+  --cap: #6d7b8e;
+  --cloud: #3b4656;
+  --cloud-op: 1;
+}
+.weather-scene[data-kind='snow'][data-day='false'] {
+  --sky-top: #1d2a3c;
+  --sky-bottom: #4b5f78;
+  --m1: #435670;
+  --m2: #324560;
+  --m3: #1d2a3d;
+  --cap: #cdd8e6;
+  --cloud: #55657b;
+  --cloud-op: 0.95;
+}
+.weather-scene[data-kind='storm'][data-day='false'] {
+  --sky-top: #0c1018;
+  --sky-bottom: #262e3b;
+  --m1: #232c3a;
+  --m2: #19212d;
+  --m3: #0c1118;
+  --cap: #5e6b7d;
+  --cloud: #2d3644;
+  --cloud-op: 1;
+}
+
+@keyframes ws-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes ws-drift {
+  from {
+    transform: translateX(-140px);
+  }
+  to {
+    transform: translateX(540px);
+  }
+}
+@keyframes ws-glow {
+  from {
+    opacity: 0.8;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes ws-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes ws-rain {
+  to {
+    transform: translate(-22px, 270px);
+  }
+}
+@keyframes ws-snow {
+  0% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(12px, 135px);
+  }
+  100% {
+    transform: translate(-6px, 270px);
+  }
+}
+@keyframes ws-fog {
+  from {
+    transform: translateX(-40px);
+  }
+  to {
+    transform: translateX(40px);
+  }
+}
+@keyframes ws-flash {
+  0%,
+  91%,
+  94%,
+  97%,
+  100% {
+    opacity: 0;
+  }
+  92% {
+    opacity: 0.55;
+  }
+  95% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .weather-scene,
+  .weather-scene * {
+    animation: none !important;
+  }
+  .ws-cloud {
+    transform: translateX(var(--x));
+  }
+}
