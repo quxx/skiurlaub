@@ -12,11 +12,12 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@capacitor/core": "8.6.2",
     "@capacitor/android": "8.6.2",
     "@capacitor/app": "8.1.2",
     "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.6.2",
     "@capacitor/splash-screen": "8.0.2",
+    "@skiurlaub/gps": "workspace:*",
     "@skiurlaub/shared": "workspace:*",
     "@tanstack/react-query": "^5.90.0",
     "leaflet": "^1.9.4",

@@ -1,5 +1,8 @@
 # Skiline: Planung und Freigabegrenze
 
+Stand 18.11.2026. **Phase 4 ist umgesetzt** (Mock, Import, Parser, Sync-Modell, gesperrter
+Live-Adapter ohne Netzwerkcode): siehe [phase-4-skiline.md](phase-4-skiline.md).
+
 Stand 17.11.2026. Ein deaktivierter Identitätsadapter liegt in
 `apps/api/src/skiline.ts`; ein Live-Datenadapter existiert noch nicht.
 Die Angaben zu `requestLogin`, `login`, `createTicket`, `refreshTickets` und

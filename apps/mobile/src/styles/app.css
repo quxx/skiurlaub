@@ -1373,3 +1373,151 @@ details[open] > summary .disclosure-chevron {
   color: #fff;
   text-shadow: none;
 }
+
+/* GPS recorder and track detail */
+.skitage-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+}
+.gps-card,
+.gps-consent {
+  padding: 16px;
+  border-radius: 24px;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+}
+.gps-card__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.gps-card__head h2,
+.gps-consent h2 {
+  font-size: 18px;
+  font-weight: 500;
+}
+.gps-card__head p {
+  font-size: 13px;
+  color: var(--muted);
+}
+.gps-card__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  color: var(--muted);
+  background: var(--surface-high);
+}
+.gps-card__icon[data-state='recording'] {
+  color: var(--on-accent-container);
+  background: var(--accent-container);
+}
+.gps-live {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0 0;
+}
+.gps-live dt {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.gps-live dd {
+  margin: 0;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.gps-consent ul {
+  margin: 12px 0 0;
+  padding-left: 20px;
+  list-style: disc;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.gps-heading {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 500;
+}
+.gps-empty {
+  color: var(--muted);
+  font-size: 14px;
+}
+.gps-tracks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+}
+.gps-tracks .action-row h3 {
+  color: var(--ink);
+}
+.track-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+}
+.track-detail__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.track-detail__head h2 {
+  flex-basis: 100%;
+  font-size: 20px;
+  font-weight: 400;
+}
+.track-kpis {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.lift-leaflet-map.track-map {
+  height: 320px;
+  min-height: 0;
+  border-radius: 20px;
+}
+.track-segments {
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+.track-segments li {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid color-mix(in srgb, var(--line) 45%, transparent);
+}
+.track-segments li span:last-child {
+  color: var(--muted);
+}
+.gps-upload {
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+}
+.gps-upload h3 {
+  font-size: 16px;
+  font-weight: 500;
+}
+.gps-upload p {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.gps-upload .auth-actions {
+  align-items: center;
+  margin-top: 12px;
+}

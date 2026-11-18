@@ -21,7 +21,7 @@
     "lint": "eslint apps packages scripts --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "pnpm --filter @skiurlaub/mobile test && pnpm --filter @skiurlaub/api test",
+    "test": "pnpm --filter @skiurlaub/skiline test && pnpm --filter @skiurlaub/gps test && pnpm --filter @skiurlaub/mobile test && pnpm --filter @skiurlaub/api test",
     "test:e2e": "pnpm --filter @skiurlaub/mobile test:e2e"
   },
   "devDependencies": {

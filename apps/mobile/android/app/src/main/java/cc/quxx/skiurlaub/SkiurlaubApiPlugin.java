@@ -33,7 +33,9 @@ public class SkiurlaubApiPlugin extends Plugin {
     }
 
     private boolean allowed(String path, String method, boolean local) {
-        if ("GET".equals(method)) return "/auth/status".equals(path) || "/me".equals(path) || path.matches("/groups/[a-f0-9-]{36}");
+        if ("GET".equals(method)) return "/auth/status".equals(path) || "/me".equals(path) || "/gps-tracks".equals(path) || path.matches("/groups/[a-f0-9-]{36}");
+        // Optional GPS module: own tracks only, ids must be UUIDs.
+        if ("PUT".equals(method) || "DELETE".equals(method)) return path.matches("/gps-tracks/[a-f0-9-]{36}");
         if ("PATCH".equals(method)) return "/me".equals(path);
         if (!"POST".equals(method)) return false;
         return "/auth/request-code".equals(path) || "/auth/verify-code".equals(path) ||
@@ -74,9 +76,9 @@ public class SkiurlaubApiPlugin extends Plugin {
             connection.setRequestProperty("X-Skiurlaub-Client", "android");
             connection.setRequestProperty("X-Skiurlaub-Request", "1");
             if (token != null) connection.setRequestProperty("Authorization", "Bearer " + token);
-            if (!"GET".equals(method)) {
+            if ("POST".equals(method) || "PUT".equals(method) || "PATCH".equals(method)) {
                 byte[] body = inputBody.toString().getBytes(StandardCharsets.UTF_8);
-                if (body.length > ("/auth/google/verify".equals(path) ? 16384 : 4096)) throw new IllegalArgumentException();
+                if (body.length > ("PUT".equals(method) ? 1_600_000 : "/auth/google/verify".equals(path) ? 16384 : 4096)) throw new IllegalArgumentException();
                 connection.setRequestProperty("Content-Type", "application/json");
                 connection.setDoOutput(true);
                 try (java.io.OutputStream output = connection.getOutputStream()) { output.write(body); }
@@ -89,7 +91,7 @@ public class SkiurlaubApiPlugin extends Plugin {
                     byte[] chunk = new byte[4096];
                     int length;
                     while ((length = input.read(chunk)) != -1) {
-                        if (bytes.size() + length > 65536) throw new IllegalStateException();
+                        if (bytes.size() + length > 262144) throw new IllegalStateException();
                         bytes.write(chunk, 0, length);
                     }
                 }

@@ -1,5 +1,9 @@
 # GPS und Offline: Entwurf
 
+> **Stand 18.11.2026:** GPS-Aufzeichnung, Auswertung und Upload sind umgesetzt, siehe
+> [phase-9-gps.md](phase-9-gps.md); Akku-Messplan: [gps-battery-test.md](gps-battery-test.md).
+> Der Offline-Teil (Queue, Konflikte) bleibt offen. Der folgende Text ist der Entwurf aus Phase 0.
+
 Phase 0. Modul optional, nie automatisch starten. Capacitor verbindet das Web-UI
 mit einem nativen Android-Standortdienst inklusive sichtbarer Foreground-
 Benachrichtigung. Der Standard-Geolocation-Wrapper allein ist keine Zusage für

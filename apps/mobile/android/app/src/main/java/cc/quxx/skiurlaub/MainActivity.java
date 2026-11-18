@@ -8,6 +8,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(SkiurlaubApiPlugin.class);
+        registerPlugin(SkiurlaubGpsPlugin.class);
         super.onCreate(savedInstanceState);
         // App API authentication uses the Keystore session, never Capacitor's shared cookie jar.
         java.net.CookieHandler.setDefault(null);

@@ -41,6 +41,8 @@ export function NativeLifecycle() {
       }
       if (location.pathname === '/skipaesse')
         void navigate('/profil', { replace: true });
+      else if (location.pathname.startsWith('/skitage/'))
+        void navigate('/skitage', { replace: true });
       else if (location.pathname !== '/') void navigate('/', { replace: true });
       else void App.minimizeApp();
     });

@@ -43,6 +43,8 @@ Provider-/Cachevalidierung, Quellenzeiten, Modellschnee und Aktualisierung:
 [Änderungen, Quellen und Abnahme](docs/phase-2-dashboard.md).
 
 - [Übergabe / Arbeitsprotokoll (Codex ⇄ Claude Code)](docs/handover.md)
+- [Phase 4: Skiline-Adapter, Mock und Import](docs/phase-4-skiline.md)
+- [GPS-Tracking (vorgezogene Phase 9)](docs/phase-9-gps.md) und [Akku-Messplan](docs/gps-battery-test.md)
 - [Ist-Zustand und Feature-Inventur](docs/features.md)
 - [Zielarchitektur und Datenmodell](docs/architecture.md)
 - [Migration, Risiken und konkreter Phase-1-Plan](docs/implementation-plan.md)

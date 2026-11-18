@@ -5,6 +5,47 @@ tatsächlichen Stand, ohne den Chatverlauf zu brauchen. Neueste Einträge oben.
 Maßgebliche Vorgaben bleiben der Master-Prompt (Phasen 0–11, immer nur eine
 Phase, danach Review/Freigabe) und die Dokumente in `docs/`.
 
+## Eintrag 2026-11-18 (5) – Claude Code: Phase 5 gestrichen, GPS-Tracking
+
+Entscheidungen des Nutzers: Phase 5 (Skipässe/NFC) **gestrichen**, da keine Skiline-Freigabe zu
+erwarten ist; GPS-Tracking (Phase 9) vorgezogen; Upload gleich dabei; Akkubudget 15–20 Punkte/8 h.
+Details, Grenzen, Deploy: [phase-9-gps.md](phase-9-gps.md). **Nicht committet, nicht veröffentlicht.**
+
+- Neues Paket `packages/gps` (Bereinigung, Höhe, Segmentierung, Statistik, Codec); 19 Tests.
+- Android: `GpsTrackingService`, `TrackStore`, `SkiurlaubGpsPlugin`; Manifest-Berechtigungen und
+  Service; `play-services-location:21.3.0`; API-Plugin-Positivliste um `/gps-tracks` erweitert.
+- App: `SkitagePage`, `TrackDetailPage`, `TrackMap`, `data/gps-client.ts`; Routen `/skitage`,
+  `/skitage/:trackId`.
+- API: Migration `0004_gps_tracks.sql`, `src/gps-tracks.ts`, Routen `/gps-tracks`; DTOs in shared;
+  8 neue Tests (API gesamt 39). Root-`pnpm test` führt skiline, gps, mobile und api aus.
+- Am Samsung geprüft: Berechtigungen, Aufnahme, Pause/Stopp, gesperrtes Display, Detail, Karte.
+  **Nicht geprüft:** Upload am Gerät (Server noch ohne Migration), echter Skitag, Akku, Worker-CPU im
+  Free-Plan.
+- Datenschutz: Das Testgerät hat eine Test-Aufzeichnung mit echtem Standort (in der App löschbar);
+  Screenshots mit Kartenausschnitt wurden aus `artifacts/` gelöscht.
+- Offene Punkte: Deploy (Migrationen 0003 + 0004), Akku-Messplan durchführen, Hinweis auf
+  „Schlafende Apps“, Pistenerkennung (Datenlizenz), Gruppenfreigabe (Phase 7), Offline-Queue (Phase 8).
+
+## Eintrag 2026-11-18 (4) – Claude Code: Phase 4 (Skiline-Adapter)
+
+Phase 3 wurde vom Nutzer freigegeben und committet (`92d0355 Phase 3`). Phase 4 begonnen
+und umgesetzt, **noch nicht committet und nicht veröffentlicht**. Details, Annahmen und
+Grenzen: [phase-4-skiline.md](phase-4-skiline.md).
+
+- Neues Paket `packages/skiline` (`@skiurlaub/skiline`): IDs, Tickets, Zod-Schemas inkl.
+  verschachteltem `SkiingDay.data`, Normalisierung, Mock, Sync-Regeln, gesperrter
+  Live-Adapter (kein HTTP-Code). 72 Tests.
+- API: Migration `0003_skiing_days.sql`, `apps/api/src/skiing-days.ts`, Routen
+  `POST /skiline/import`, `GET /skiing-days`, `DELETE /skiing-days/:id`; DTOs in
+  `packages/shared`. 10 neue Tests in `apps/api/test/skiing-days.test.ts` (31 API-Tests
+  gesamt). Root-`pnpm test` führt das neue Paket mit aus.
+- Keine Oberfläche, kein Skiline-Netzwerkzugriff, keine Produktions-Migration.
+- Offen: Freigabe/echter anonymisierter Export, Token-Vault, Feldnamen/Einheiten
+  (Liste in phase-4-skiline.md), Veröffentlichung (Migration + Deploy).
+- Hinweis: Mehrzeilige Bash-Heredocs mit Sonderzeichen wurden in dieser Umgebung
+  mehrfach abgeschnitten; Dateien daher mit dem Write-Werkzeug schreiben und
+  danach prüfen.
+
 ## Eintrag 2026-11-18 (3) – Claude Code: zurück zu Phase 3, Sitzungsdauer
 
 Entscheidungen des Nutzers: (1) Konto-Löschung/Export erst in Phase 11, (2)

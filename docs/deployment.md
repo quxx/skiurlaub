@@ -64,3 +64,14 @@ JavaScript 445,14 kB, gzip 134,83 kB; Hero-Bild 2.475,69 kB).
 Skripte fehlen. Keine vorhandenen Unit-/Integration-/E2E-/Androidtests gefunden.
 Phase 0 führt keine Testinfrastruktur ein; diese ist Teil Phase 1.
 Keine Live-Skiline-, NFC-, GPS-, Signing- oder Restoretests ausgeführt.
+
+## Migration 0003 (Phase 4)
+
+`0003_skiing_days.sql` ist lokal und in Tests angewendet, auf der Produktions-D1 **noch nicht**.
+Schritte und Hinweise: [phase-4-skiline.md](phase-4-skiline.md#betrieb--deployment).
+
+## Migration 0004 (GPS-Tracks)
+
+`0004_gps_tracks.sql` ist lokal und in Tests angewendet, auf der Produktions-D1 **noch nicht**
+(ebenso wenig 0003). Schritte, Kapazität (D1 Free: 500 MB pro Datenbank, 5 GB pro Konto, 2 MB pro Zeile)
+und offene CPU-Frage: [phase-9-gps.md](phase-9-gps.md).

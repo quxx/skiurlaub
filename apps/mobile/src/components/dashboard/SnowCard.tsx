@@ -25,7 +25,6 @@ export function SnowTile() {
         {depth ?? '—'}
         <small> cm</small>
       </strong>
-      <span className="kpi-sub">Modellwert</span>
       <span className="kpi-sub" data-accent={(newSnow ?? 0) > 0 || undefined}>
         Neu{' '}
         {newSnow != null

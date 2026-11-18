@@ -30,8 +30,10 @@ export function AppLayout() {
         ? 'Pistenkarte'
         : pathname === '/skipaesse'
           ? 'Skipässe'
-          : (destinations.find((item) => item.to === pathname)?.label ??
-            'Seite nicht gefunden');
+          : pathname.startsWith('/skitage/')
+            ? 'Aufzeichnung'
+            : (destinations.find((item) => item.to === pathname)?.label ??
+              'Seite nicht gefunden');
   const main = useRef<HTMLElement>(null);
   const previous = useRef(pathname);
   useEffect(() => {
@@ -63,7 +65,8 @@ export function AppLayout() {
           {destinations.map(({ to, label, icon: Icon }) => {
             const active =
               pathname === to ||
-              (to === '/profil' && pathname === '/skipaesse');
+              (to === '/profil' && pathname === '/skipaesse') ||
+              (to === '/skitage' && pathname.startsWith('/skitage/'));
             return (
               <Link
                 key={to}
@@ -82,14 +85,24 @@ export function AppLayout() {
       </aside>
       <div className="app-body">
         <header className="app-toolbar">
-          {(pathname === '/karte' || pathname === '/skipaesse') && (
+          {(pathname === '/karte' ||
+            pathname === '/skipaesse' ||
+            pathname.startsWith('/skitage/')) && (
             <Link
-              to={pathname === '/skipaesse' ? '/profil' : '/'}
+              to={
+                pathname === '/skipaesse'
+                  ? '/profil'
+                  : pathname.startsWith('/skitage/')
+                    ? '/skitage'
+                    : '/'
+              }
               className="icon-button"
               aria-label={
                 pathname === '/skipaesse'
                   ? 'Zurück zum Profil'
-                  : 'Zurück zur Übersicht'
+                  : pathname.startsWith('/skitage/')
+                    ? 'Zurück zu den Aufzeichnungen'
+                    : 'Zurück zur Übersicht'
               }
             >
               <ArrowLeft size={24} aria-hidden="true" />

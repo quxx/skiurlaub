@@ -2,9 +2,16 @@ import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { EmptyPage } from '@/app/EmptyPage';
-import { CalendarDays, CreditCard, Users } from 'lucide-react';
+import { CreditCard, Users } from 'lucide-react';
 import { ProfilePage } from '@/app/ProfilePage';
 import { MapPage } from '@/app/MapPage';
+import { SkitagePage } from '@/app/SkitagePage';
+
+const TrackDetailPage = lazy(() =>
+  import('@/app/TrackDetailPage').then((module) => ({
+    default: module.TrackDetailPage,
+  })),
+);
 
 const HomePage = lazy(() =>
   import('@/app/HomePage').then((module) => ({ default: module.HomePage })),
@@ -28,14 +35,19 @@ export function App() {
             </Suspense>
           }
         />
+        <Route path="skitage" element={<SkitagePage />} />
         <Route
-          path="skitage"
+          path="skitage/:trackId"
           element={
-            <EmptyPage
-              title="Skitage"
-              icon={CalendarDays}
-              description="Hier findest du später deine Skitage und Statistiken."
-            />
+            <Suspense
+              fallback={
+                <p className="route-loading" role="status">
+                  Aufzeichnung wird geladen …
+                </p>
+              }
+            >
+              <TrackDetailPage />
+            </Suspense>
           }
         />
         <Route

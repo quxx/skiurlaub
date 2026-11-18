@@ -87,6 +87,7 @@ beforeEach(async () => {
       'DELETE FROM auth_identities',
       'DELETE FROM user_sessions',
       'DELETE FROM users',
+      'DELETE FROM ski_resorts',
       'DELETE FROM auth_challenges',
       'DELETE FROM auth_rate_limits',
     ].map((sql) => db.prepare(sql)),

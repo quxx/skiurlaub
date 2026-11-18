@@ -23,6 +23,17 @@ import {
   userDto,
 } from './sessions';
 import { skilineIdentityProvider } from './skiline';
+import {
+  deleteGpsTrack,
+  listGpsTracks,
+  readGpsTrackData,
+  uploadGpsTrack,
+} from './gps-tracks';
+import {
+  deleteSkiingDay,
+  importSkilineExport,
+  listSkiingDays,
+} from './skiing-days';
 
 async function route(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
@@ -133,6 +144,41 @@ async function route(request: Request, env: Env): Promise<Response> {
             'Set-Cookie': sessionCookie('', request, env),
           },
     );
+  }
+  if (path === '/api/v1/skiline/import' && method === 'POST')
+    return json(
+      await importSkilineExport(
+        request,
+        env,
+        await requireSession(request, env),
+      ),
+    );
+  if (path === '/api/v1/skiing-days' && method === 'GET')
+    return json(await listSkiingDays(env, await requireSession(request, env)));
+  const skiingDay = path.match(/^\/api\/v1\/skiing-days\/([a-f0-9-]{36})$/);
+  if (skiingDay && method === 'DELETE') {
+    await deleteSkiingDay(
+      env,
+      await requireSession(request, env),
+      skiingDay[1],
+    );
+    return json({ deleted: true });
+  }
+  if (path === '/api/v1/gps-tracks' && method === 'GET')
+    return json(await listGpsTracks(env, await requireSession(request, env)));
+  const gpsTrack = path.match(
+    /^\/api\/v1\/gps-tracks\/([a-f0-9-]{36})(\/data)?$/,
+  );
+  if (gpsTrack) {
+    const user = await requireSession(request, env);
+    if (!gpsTrack[2] && method === 'PUT')
+      return json(await uploadGpsTrack(request, env, user, gpsTrack[1]));
+    if (gpsTrack[2] && method === 'GET')
+      return readGpsTrackData(env, user, gpsTrack[1]);
+    if (!gpsTrack[2] && method === 'DELETE') {
+      await deleteGpsTrack(env, user, gpsTrack[1]);
+      return json({ deleted: true });
+    }
   }
   const group = path.match(/^\/api\/v1\/groups\/([a-f0-9-]{36})$/);
   if (group && method === 'GET')

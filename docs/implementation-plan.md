@@ -35,11 +35,11 @@ Playwright prüft Navigation, Theme und Dashboard-Fehlerfall.
 | 2     | Dashboard härten: getrennte Schneequelle, Vertragsvalidierung, Quellen-/Lizenzprüfung, Cache-/Zeitzonentests    |
 | 3     | Worker/D1, Migrationen, unabhängige Anmeldung; Loginanbieter, Sessions und Datenschutzkonzept zuvor entscheiden |
 | 4     | Mock-/Import-Skiline, Schemas, Sync; echter Adapter bleibt bis Freigabe deaktiviert                             |
-| 5     | Skipässe, manuelle Eingabe, Capacitor-Grundlage und NFC-Gerätetest; Registrierung nur bestätigt                 |
+| 5     | **gestrichen am 18.11.2026** (Skiline-Anbindung nicht verfügbar, Skipässe/NFC ohne Nutzen)                      |
 | 6     | persönliche Statistiken, Quellenkennzeichnung, Recharts, Saisons und Rekorde                                    |
 | 7     | Gruppen, Einladungen, Freigaben, Rankings; Berechtigungs-Negativtests für jeden Ressourcentyp                   |
 | 8     | IndexedDB/native Persistenz, Queue, App-Shell, Konflikt- und Reconnecttests                                     |
-| 9     | nativer GPS-Dienst, Auswertung, optionale Gruppenfreigabe; Akku-/Geräteabnahme vor Aktivierung                  |
+| 9     | **vorgezogen (nach Phase 4):** nativer GPS-Dienst, Auswertung, Upload; Gruppenfreigabe erst mit Phase 7         |
 | 10    | reproduzierbarer signierter Android-Release, Releasekanal, APK-Updateprüfung                                    |
 | 11    | Regression, Sicherheits-/Kostenprüfung, Restore-Test, Betriebs- und Benutzeranleitung                           |
 
