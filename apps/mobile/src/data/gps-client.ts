@@ -3,6 +3,7 @@ import type { PluginListenerHandle } from '@capacitor/core';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import type { RawPoint } from '@skiurlaub/gps';
+import { batterySampleSchema } from '@/data/battery';
 
 // Bridge to the native recorder (SkiurlaubGpsPlugin). Everything coming back over
 // the bridge is validated; raw tracks never leave the device from here.
@@ -18,6 +19,9 @@ export const gpsStatusSchema = z.object({
   intervalMs: z.number(),
   distanceM: z.number(),
   error: z.string().nullable(),
+  // Debug builds only (battery acceptance test).
+  batteryPct: z.number().optional(),
+  batteryStartPct: z.number().optional(),
 });
 export type GpsStatus = z.infer<typeof gpsStatusSchema>;
 
@@ -29,6 +33,7 @@ export const trackMetaSchema = z.object({
   pointCount: z.number(),
   distanceM: z.number().optional(),
   altRef: z.enum(['msl', 'ellipsoid']).optional(),
+  battery: z.array(batterySampleSchema).optional(),
 });
 export type TrackMeta = z.infer<typeof trackMetaSchema>;
 
@@ -38,6 +43,7 @@ export const rawPointSchema = z.object({
   lat: finite,
   lon: finite,
   alt: finite.optional(),
+  altE: finite.optional(),
   acc: finite.optional(),
   vacc: finite.optional(),
   speed: finite.optional(),

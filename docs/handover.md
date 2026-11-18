@@ -5,6 +5,10 @@ tatsächlichen Stand, ohne den Chatverlauf zu brauchen. Neueste Einträge oben.
 Maßgebliche Vorgaben bleiben der Master-Prompt (Phasen 0–11, immer nur eine
 Phase, danach Review/Freigabe) und die Dokumente in `docs/`.
 
+## Eintrag 2026-11-18 (12) – Claude Code: Akku-Protokoll (Debug) und Spaziergang-Auswertung
+
+Nutzerwunsch: Akkustand beim Start/Ende der GPS-Aufzeichnung protokollieren (bis zum Release) und den Spaziergang prüfen. Umgesetzt: `GpsTrackingService.java` schreibt in Debug-Builds ein Akku-Protokoll in die Track-Meta (Start, Pause, Fortsetzen, Ende, alle 10 min; Prozent, lädt, Temperatur); Anzeige live (SkitagePage) und als Karte "Akku (Test)" (TrackDetailPage); `data/battery.ts` + Test. Spaziergang: Auswertung hatte Gehen als Pause gewertet; behoben (Doppler-Geschwindigkeit, tolerantere Schwellen, altE-Rückfall), `walk.test.ts` (GPS 35 Tests). Nur betroffene Prüfungen gelaufen (gps-Paket, battery-Test, Typecheck/ESLint der geänderten App-Dateien, Debug-APK, Gerätetest des Akku-Protokolls); nicht gelaufen: Gesamt-Suite, E2E, API. Details: docs/gps-battery-test.md, docs/phase-9-gps.md. Nicht committet.
+
 ## Eintrag 2026-11-18 (11) – Claude Code: Wettermodell GeoSphere, "Modell"-Texte entfernt
 
 Auf Nutzerwunsch: genauere Wetterwerte und Streichen aller "Modellprognose/Modellwetter"-Beschriftungen. Open-Meteo wird jetzt mit `models=geosphere_seamless` abgefragt (Fallback Standardmodell; kein zweiter Abruf bei Rate Limit). Begründung: 48-h-Vergleich mit der GeoSphere-Station Krimml (Temperatur-Abweichung 1,1 °C statt 4,2 °C beim bisherigen Standardmodell; nur eine Talstation, siehe docs/phase-5-wetterdaten.md). Dabei Fehler in `remote.ts` behoben: Beim Weiterreichen eines Fehlers ohne Cache ging `retryAt` verloren. UI-Texte angepasst (Quellenangabe CC BY bleibt). App 71 Tests. Nicht committet.

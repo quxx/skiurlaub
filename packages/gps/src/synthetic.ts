@@ -15,6 +15,10 @@ export type SynthOptions = {
   accM?: number;
   altNoiseM?: number;
   withBaro?: boolean;
+  /** Adds a Doppler-like `speed` field (true speed plus noise). */
+  withSpeed?: boolean;
+  /** Reports the altitude as `altE` instead of `alt` (device without MSL altitude). */
+  ellipsoidOnly?: boolean;
   startT?: number;
   lat?: number;
   lon?: number;
@@ -52,7 +56,7 @@ export function synthesizeTrack(
   const metersPerDegree = (Math.PI / 180) * EARTH_RADIUS_M;
   const points: RawPoint[] = [];
 
-  const emit = () => {
+  const emit = (speed = 0) => {
     const p: RawPoint = {
       t,
       lat: lat0 + (north + (gauss() * acc) / 2) / metersPerDegree,
@@ -64,6 +68,11 @@ export function synthesizeTrack(
       acc,
       vacc: altNoise * 2,
     };
+    if (options.withSpeed) p.speed = Math.max(0, speed + gauss() * 0.15);
+    if (options.ellipsoidOnly) {
+      p.altE = p.alt;
+      delete p.alt;
+    }
     if (options.withBaro)
       p.pressureHpa = 1013.25 * (1 - alt / 44330) ** 5.255 + gauss() * 0.03;
     points.push(p);
@@ -95,7 +104,7 @@ export function synthesizeTrack(
       north += Math.cos(heading) * speed * interval;
       east += Math.sin(heading) * speed * interval;
       alt += dAlt;
-      emit();
+      emit(speed);
     }
   }
   return points;

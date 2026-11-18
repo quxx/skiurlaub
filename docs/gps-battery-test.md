@@ -55,3 +55,18 @@ Aufzeichnung bei langen Pausen automatisch pausieren (nur mit Nutzerzustimmung),
 
 18.11.2026, Samsung SM-S918B, Android 17: Stillstand im Haus, Display gesperrt, 10-s-Intervall
 angefordert, ca. 6 Punkte in 100 s geliefert (Batching/Stillstand). Aussage über Akkuverbrauch: keine.
+
+## Automatisches Akku-Protokoll (nur Debug-Builds, bis zum Release)
+
+Seit 18.11.2026 schreibt die Debug-App bei jeder Aufzeichnung den Akkustand mit: beim Start, bei
+Pause/Fortsetzen, beim Beenden (oder Unterbrechen) und alle 10 Minuten dazwischen. Gespeichert werden
+Zeit, Prozent, „lädt“ (ja/nein) und Akkutemperatur im Meta-Eintrag des Tracks. Im Release-Build ist
+das abgeschaltet (`BuildConfig.DEBUG`), und die Anzeige verschwindet von selbst.
+
+- **Beim Aufzeichnen** (Skitage-Tab): „Akku 87 % · Start 90 % (Test)“.
+- **In der Aufzeichnung** (Detailseite): Karte „Akku (Test)“ mit Start → Ende, Punkten, Dauer, Punkten
+  pro Stunde (ab 10 Minuten) und höchster Akkutemperatur. Hat das Handy zwischendurch geladen, steht
+  dort ausdrücklich, dass der Wert nicht aussagekräftig ist.
+- Die Auflösung ist 1 Prozentpunkt. Für das Budget (15–20 Punkte in 8 h) taugen daher nur lange Läufe;
+  die Stundenrate kurzer Läufe ist grob. Für die Vergleichsmessung „ohne Tracking“ bleibt der Plan oben.
+- Rohdaten: `adb shell run-as cc.quxx.skiurlaub.debug cat files/tracks/<id>.json` (Feld `battery`).

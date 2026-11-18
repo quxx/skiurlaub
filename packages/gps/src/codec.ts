@@ -14,6 +14,7 @@ const FLAG_ACC = 2;
 const FLAG_VACC = 4;
 const FLAG_SPEED = 8;
 const FLAG_PRESSURE = 16;
+const FLAG_ALTE = 32;
 
 function writeVarint(out: number[], value: number) {
   if (!Number.isSafeInteger(value) || value < 0)
@@ -62,6 +63,7 @@ export function encodeTrack(points: readonly RawPoint[]): Uint8Array {
   let lat = 0;
   let lon = 0;
   let alt = 0;
+  let altE = 0;
   let pressure = 0;
   points.forEach((p, i) => {
     let flags = 0;
@@ -70,6 +72,7 @@ export function encodeTrack(points: readonly RawPoint[]): Uint8Array {
     if (p.vacc != null) flags |= FLAG_VACC;
     if (p.speed != null) flags |= FLAG_SPEED;
     if (p.pressureHpa != null) flags |= FLAG_PRESSURE;
+    if (p.altE != null) flags |= FLAG_ALTE;
     out.push(flags);
     if (i === 0) writeVarint(out, Math.round(p.t));
     else writeVarint(out, zigzag(Math.round(p.t) - t));
@@ -95,6 +98,11 @@ export function encodeTrack(points: readonly RawPoint[]): Uint8Array {
       writeVarint(out, zigzag(pa - pressure));
       pressure = pa;
     }
+    if (flags & FLAG_ALTE) {
+      const a = q(p.altE as number, 10);
+      writeVarint(out, zigzag(a - altE));
+      altE = a;
+    }
   });
   return Uint8Array.from(out);
 }
@@ -113,6 +121,7 @@ export function decodeTrack(bytes: Uint8Array): RawPoint[] {
   let lat = 0;
   let lon = 0;
   let alt = 0;
+  let altE = 0;
   let pressure = 0;
   for (let i = 0; i < count; i++) {
     const flags = reader.byte();
@@ -130,6 +139,10 @@ export function decodeTrack(bytes: Uint8Array): RawPoint[] {
     if (flags & FLAG_PRESSURE) {
       pressure += reader.signed();
       point.pressureHpa = pressure / 100;
+    }
+    if (flags & FLAG_ALTE) {
+      altE += reader.signed();
+      point.altE = altE / 10;
     }
     points.push(point);
   }

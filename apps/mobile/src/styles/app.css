@@ -1655,3 +1655,10 @@ details[open] > summary .disclosure-chevron {
 .lift-leaflet-map.track-map {
   height: 380px;
 }
+
+.gps-battery {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}

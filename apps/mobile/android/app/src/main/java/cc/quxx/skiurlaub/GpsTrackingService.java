@@ -8,6 +8,9 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.BatteryManager;
+import org.json.JSONArray;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
@@ -67,6 +70,10 @@ public class GpsTrackingService extends Service {
     static volatile long intervalMs = 0;
     static volatile double distanceM = 0;
     static volatile String error = null;
+    // Battery log for the battery acceptance test: only in debug builds (removed with the release).
+    private static final boolean TRACK_BATTERY = BuildConfig.DEBUG;
+    static volatile double batteryStartPct = -1;
+    static volatile double batteryPct = -1;
 
     private FusedLocationProviderClient client;
     private TrackStore store;
@@ -83,6 +90,8 @@ public class GpsTrackingService extends Service {
     private long lastNotificationAt = 0;
     private long lastStatusAt = 0;
     private int lastMetaCount = 0;
+    private JSONArray battery = new JSONArray();
+    private long lastBatteryAt = 0;
 
     private final SensorEventListener pressureListener = new SensorEventListener() {
         @Override
@@ -181,7 +190,10 @@ public class GpsTrackingService extends Service {
         previous = null;
         lastMetaCount = 0;
         mode = MOVING_MS;
+        battery = new JSONArray();
+        batteryStartPct = -1;
         state = "recording";
+        sampleBattery("start");
         prefs.edit().putString("state", "recording").putString("track", trackId).apply();
         if (!enterForeground()) return;
         startUpdates();
@@ -203,6 +215,9 @@ public class GpsTrackingService extends Service {
             lastMetaCount = pointCount;
             useMsl = "msl".equals(meta.optString("altRef"));
             distanceM = meta.optDouble("distanceM", 0);
+            JSONArray saved = meta.optJSONArray("battery");
+            battery = saved == null ? new JSONArray() : saved;
+            batteryStartPct = battery.length() > 0 ? battery.getJSONObject(0).optDouble("pct", -1) : -1;
             error = null;
             previous = null;
             state = "recording";
@@ -221,6 +236,7 @@ public class GpsTrackingService extends Service {
     private void pause() throws Exception {
         if (!"recording".equals(state)) return;
         stopUpdates();
+        sampleBattery("pause");
         state = "paused";
         updateMeta("paused", false);
         prefs.edit().putString("state", "paused").apply();
@@ -232,6 +248,7 @@ public class GpsTrackingService extends Service {
         if (!"paused".equals(state)) return;
         state = "recording";
         previous = null;
+        sampleBattery("resume");
         updateMeta("recording", false);
         prefs.edit().putString("state", "recording").apply();
         startUpdates();
@@ -245,11 +262,14 @@ public class GpsTrackingService extends Service {
             return;
         }
         stopUpdates();
+        sampleBattery("stop");
         updateMeta("stopped", true);
         clearActive();
         state = "idle";
         publish(true);
         trackId = null;
+        batteryPct = -1;
+        batteryStartPct = -1;
         stopForeground(STOP_FOREGROUND_REMOVE);
         stopSelf();
     }
@@ -258,7 +278,10 @@ public class GpsTrackingService extends Service {
     private void interrupt(String reason) {
         try {
             stopUpdates();
-            if (trackId != null) updateMeta("interrupted", true);
+            if (trackId != null) {
+                sampleBattery("interrupted");
+                updateMeta("interrupted", true);
+            }
         } catch (Exception ignored) {
             // best effort
         }
@@ -290,6 +313,7 @@ public class GpsTrackingService extends Service {
         JSONObject meta = store.readMeta(trackId);
         if (meta == null) return;
         meta.put("state", newState).put("pointCount", pointCount).put("distanceM", distanceM);
+        if (TRACK_BATTERY) meta.put("battery", battery);
         if (ended) meta.put("endedAt", System.currentTimeMillis());
         store.writeMeta(meta);
         lastMetaCount = pointCount;
@@ -349,6 +373,10 @@ public class GpsTrackingService extends Service {
                 if (Build.VERSION.SDK_INT >= 34 && location.hasMslAltitude()) {
                     p.put("alt", location.getMslAltitudeMeters());
                     if (location.hasMslAltitudeAccuracy()) p.put("vacc", location.getMslAltitudeAccuracyMeters());
+                } else if (location.hasAltitude()) {
+                    // No mean-sea-level altitude from this provider: keep the ellipsoid altitude as
+                    // a fallback. The app uses one reference per track, never a mix.
+                    p.put("altE", location.getAltitude());
                 }
             } else if (location.hasAltitude()) {
                 p.put("alt", location.getAltitude());
@@ -377,6 +405,7 @@ public class GpsTrackingService extends Service {
             // meta is rewritten on the next state change
         }
         long now = SystemClock.elapsedRealtime();
+        if (TRACK_BATTERY && now - lastBatteryAt > 600_000) sampleBattery("interval");
         if (now - lastNotificationAt > 15_000) notifyNow();
         if (now - lastStatusAt > 3_000) publish(false);
     }
@@ -402,6 +431,7 @@ public class GpsTrackingService extends Service {
 
     private void publish(boolean force) {
         lastStatusAt = SystemClock.elapsedRealtime();
+        if (TRACK_BATTERY && !"idle".equals(state)) batteryPct = currentBatteryPct();
         Listener l = listener;
         if (l != null) l.onStatus(statusJson());
     }
@@ -418,10 +448,45 @@ public class GpsTrackingService extends Service {
             json.put("intervalMs", intervalMs);
             json.put("distanceM", Math.round(distanceM));
             json.put("error", error == null ? JSONObject.NULL : error);
+            if (TRACK_BATTERY && batteryPct >= 0) {
+                json.put("batteryPct", batteryPct);
+                json.put("batteryStartPct", batteryStartPct);
+            }
         } catch (org.json.JSONException ignored) {
             // keys are constants
         }
         return json;
+    }
+
+    private double currentBatteryPct() {
+        Intent intent = registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        if (intent == null) return -1;
+        int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+        int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100);
+        return level < 0 || scale <= 0 ? -1 : Math.round(level * 1000f / scale) / 10.0;
+    }
+
+    /** Appends a battery sample (level, charging, temperature) to the track's meta data. */
+    private void sampleBattery(String reason) {
+        if (!TRACK_BATTERY) return;
+        Intent intent = registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        double pct = currentBatteryPct();
+        if (intent == null || pct < 0) return;
+        try {
+            JSONObject sample = new JSONObject()
+                .put("t", System.currentTimeMillis())
+                .put("pct", pct)
+                .put("charging", intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0)
+                .put("reason", reason);
+            int temperature = intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, Integer.MIN_VALUE);
+            if (temperature != Integer.MIN_VALUE) sample.put("tempC", temperature / 10.0);
+            if (battery.length() < 300) battery.put(sample);
+            if (batteryStartPct < 0) batteryStartPct = pct;
+            batteryPct = pct;
+            lastBatteryAt = SystemClock.elapsedRealtime();
+        } catch (org.json.JSONException ignored) {
+            // keys are constants
+        }
     }
 
     private void notifyNow() {

@@ -94,6 +94,16 @@ Live-Werte), Liste der Aufzeichnungen, Detailseite mit Auswertung, Warnungen, Ab
   Pisten richtig benannt; eine Piste außerhalb der App-Liste wird korrekt als „abseits bekannter Pisten“ angezeigt. Das ist kein Beweis für die Genauigkeit auf einem
   echten Skitag.
 
+## Praxistest Spaziergang (18.11.2026) und Korrekturen
+
+Ein echter Spaziergang (ca. 20 min Gehen, Handy bei ausgeschaltetem Display in der Hosentasche, 29 min Aufzeichnung, 137 Punkte, Genauigkeit im Schnitt 10 m, 8 Punkte über 50 m) zeigte Schwächen der Auswertung. Die ursprüngliche Version wertete fast alles als Pause (141 m Strecke, 22 min Pause), obwohl das Handy 0,8–1,5 m/s Gehgeschwindigkeit meldete. Ursachen und Korrekturen (`packages/gps`):
+
+1. Die Pausenerkennung zog den Genauigkeitsradius von der Verschiebung ab; bei langsamem Gehen und 10 m Genauigkeit blieb kaum Bewegung übrig. Jetzt stützt die vom Empfänger gemeldete Doppler-Geschwindigkeit (Median über das Zeitfenster) die Schätzung. Stillstand mit Rauschen bleibt Pause (Test).
+2. Schwellen toleranter: Genauigkeit bis 50 m (vorher 40), Lücken ab 90 s (vorher 60), Schrittdistanz bis 60 s (vorher 30), Pausen-/Bewegungsschwelle 0,5 m/s.
+3. Auf diesem Gerät liefert der Standortanbieter keine Höhe über Meer. Die App speichert jetzt als Rückfall die Ellipsoid-Höhe (`altE`, im Format ergänzt); die Auswertung nutzt pro Track genau eine Höhenreferenz (nie gemischt) und sonst nur das Barometer.
+
+Ergebnis derselben Aufzeichnung nach der Korrektur: 865 m Strecke in 13 min Bewegung bei ca. 4 km/h (Gehtempo), keine Lifte/Abfahrten, ca. 14 min Pause am Ende. Offen: Die tatsächlich gegangene Strecke ist nicht bekannt (Rohlänge der Punkte 1.224 m enthält Rauschen), die Zahl ist also plausibel, aber nicht gegen eine Referenz geprüft. Absolute Höhe nur barometrisch (Standardatmosphäre), nicht auf Meter genau.
+
 ## Geprüft
 
 - `packages/gps` 19 Tests, API 39 Tests (8 neue für Tracks: Anmeldung, Upload/Roundtrip,

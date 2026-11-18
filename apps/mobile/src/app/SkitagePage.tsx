@@ -168,6 +168,14 @@ function Recorder() {
           </div>
         </dl>
       )}
+      {state !== 'idle' && status?.batteryPct != null && (
+        <p className="gps-battery" role="status">
+          Akku {status.batteryPct.toLocaleString('de-DE')} %
+          {status.batteryStartPct != null &&
+            ` · Start ${status.batteryStartPct.toLocaleString('de-DE')} %`}{' '}
+          (Test)
+        </p>
+      )}
       <div className="auth-actions">
         {state === 'idle' && (
           <Button

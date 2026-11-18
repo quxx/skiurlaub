@@ -29,6 +29,7 @@ import { liftRefs, liftTypeLabel } from '@/data/resort/lift-labels';
 import { loadZillertalArenaPistes } from '@/data/resort/liftradar-pistes';
 import type { PisteStretch } from '@skiurlaub/gps';
 import { gps, loadTrack } from '@/data/gps-client';
+import { summarizeBattery } from '@/data/battery';
 
 const warningText: Record<string, string> = {
   too_few_points: 'Zu wenige Punkte für eine Auswertung.',
@@ -121,6 +122,10 @@ export function TrackDetailPage() {
   );
   // Lifts are matched against known terminals (OSM, ODbL). Pistes use the LiftRadar tiles
   // the map already loads (shared request); the usage right is documented as unresolved.
+  const battery = useMemo(
+    () => summarizeBattery(track.data?.meta.battery ?? []),
+    [track.data],
+  );
   const matches = useMemo(
     () =>
       analysis ? matchLifts(analysis.points, analysis.segments, liftRefs) : [],
@@ -345,6 +350,30 @@ export function TrackDetailPage() {
         stammen aus GPS und Luftdruck, sind experimentell und können von
         offiziellen Skiline-Werten abweichen.
       </p>
+      {battery && (
+        <section className="gps-upload" aria-labelledby="gps-battery-title">
+          <h3 id="gps-battery-title">Akku (Test)</h3>
+          <p>
+            {battery.startPct.toLocaleString('de-DE')} % →{' '}
+            {battery.endPct.toLocaleString('de-DE')} % ·{' '}
+            {battery.dropPoints === 0 ? '' : battery.dropPoints > 0 ? '−' : '+'}
+            {Math.abs(battery.dropPoints).toLocaleString('de-DE', {
+              maximumFractionDigits: 1,
+            })}{' '}
+            Punkte in {formatDuration(battery.minutes * 60)}
+            {battery.perHour != null &&
+              !battery.charged &&
+              ` (ca. ${battery.perHour.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Punkte pro Stunde)`}
+            {battery.maxTempC != null &&
+              ` · Akku bis ${battery.maxTempC.toLocaleString('de-DE')} °C`}
+          </p>
+          {battery.charged && (
+            <p className="auth-notice">
+              Das Handy hat geladen: Der Wert ist nicht aussagekräftig.
+            </p>
+          )}
+        </section>
+      )}
       <section className="gps-upload" aria-labelledby="gps-upload-title">
         <h3 id="gps-upload-title">Sicherung auf dem Server</h3>
         <p>

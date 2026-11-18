@@ -11,6 +11,8 @@ export type RawPoint = {
   acc?: number | null;
   /** Vertical accuracy in meters. */
   vacc?: number | null;
+  /** WGS84-ellipsoid altitude, recorded when no mean-sea-level altitude is available. */
+  altE?: number | null;
   /** Speed reported by the provider in m/s (not used for the stats). */
   speed?: number | null;
   /** Barometric pressure in hPa, when the device has a pressure sensor. */
@@ -68,22 +70,22 @@ export type GpsConfig = {
 };
 
 export const defaultGpsConfig: GpsConfig = {
-  maxAccuracyM: 40,
+  maxAccuracyM: 50,
   maxSpeedMs: 45,
   resyncAfterJumps: 5,
   windowSec: 20,
-  pauseSpeedMs: 0.6,
+  pauseSpeedMs: 0.5,
   liftMinVerticalMs: 0.25,
   liftMinHorizontalMs: 1.2,
   liftMaxHorizontalMs: 9,
   runMinDescentMs: 0.35,
   runMinHorizontalMs: 1.5,
-  flatMinHorizontalMs: 1,
+  flatMinHorizontalMs: 0.5,
   minSegmentSec: { lift: 40, run: 15, flat: 20, pause: 45 },
   minLiftAscentM: 30,
   minRunDescentM: 20,
-  maxStepSec: 30,
-  gapSec: 60,
+  maxStepSec: 60,
+  gapSec: 90,
   altitudeDeadbandM: 1.5,
   baroGpsGainPerSec: 0.01,
   minPointsForStats: 20,

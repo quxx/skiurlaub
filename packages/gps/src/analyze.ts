@@ -105,7 +105,15 @@ export function analyzeTrack(
 ): TrackAnalysis {
   const cleaned = cleanPoints(input, config);
   const raw = cleaned.points;
-  const { alt, source } = fuseAltitude(raw, config);
+  // One altitude reference per track: mean-sea-level altitude if (almost) every fix has it,
+  // otherwise the ellipsoid altitude, otherwise barometer only. Never mixed within a track.
+  const share = (key: 'alt' | 'altE') =>
+    raw.length ? raw.filter((p) => p[key] != null).length / raw.length : 0;
+  const altitudeInput =
+    share('alt') < 0.8 && share('altE') >= 0.8
+      ? raw.map((p) => ({ ...p, alt: p.altE }))
+      : raw;
+  const { alt, source } = fuseAltitude(altitudeInput, config);
   const { lat, lon } = smoothPositions(raw, config.maxStepSec);
   const t = raw.map((p) => p.t);
   const droppedCount = Object.values(cleaned.dropped).reduce(
@@ -192,7 +200,16 @@ export function analyzeTrack(
       const distance = haversine(lat[lo], lon[lo], lat[hi], lon[hi]);
       // Standing still looks like movement within the accuracy radius.
       const slack = 0.5 * ((raw[lo].acc ?? 5) + (raw[hi].acc ?? 5));
-      const vh = Math.max(0, distance - slack) / seconds;
+      // Displacement shrinks by the accuracy radius, which hides slow walking when the
+      // phone is in a pocket. The receiver's own Doppler speed is accurate for slow
+      // movement, so its median over the window backs the displacement estimate up.
+      const reported: number[] = [];
+      for (let j = lo; j <= hi; j++) {
+        const v = raw[j].speed;
+        if (v != null && Number.isFinite(v) && v >= 0) reported.push(v);
+      }
+      const doppler = reported.length >= 2 ? median(reported) : 0;
+      const vh = Math.max(Math.max(0, distance - slack) / seconds, doppler);
       const vv = (alt[hi] - alt[lo]) / seconds;
       stepKinds.push(
         source === 'none' && vh >= 1 ? 'flat' : classify(vh, vv, config),
