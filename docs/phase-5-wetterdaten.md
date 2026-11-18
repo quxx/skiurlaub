@@ -69,3 +69,42 @@ Sie ist keine gemessene Berg- oder Talschneehöhe des Skigebiets. Der Link zum
 offiziellen Schneebericht bleibt direkt an der Karte verfügbar.
 
 Quelle: [Open-Meteo Forecast API](https://open-meteo.com/en/docs)
+
+## Wettermodell: GeoSphere Austria (seit 18.11.2026)
+
+Die App fragt Open-Meteo jetzt zuerst mit `models=geosphere_seamless` ab (GeoSphere Austria, der
+österreichische Wetterdienst: 1-km-Modell für die ersten Tage, danach ECMWF). Fällt diese Abfrage
+aus, nutzt sie das Standardmodell von Open-Meteo (`best_match`, in Mitteleuropa ICON-D2/ICON-EU);
+bei einem Rate Limit gibt es bewusst keinen zweiten Abruf. Implementiert in
+`data/weather/open-meteo-provider.ts` (zwei Provider mit getrenntem Cache, `geosphere:v1` und `v4`),
+getestet in `data/providers.test.ts`.
+
+**Begründung (Vergleich mit echten Messwerten):** Messstation KRIMML der GeoSphere Austria (TAWES,
+1009 m, 4,3 km von Hochkrimml) gegen Open-Meteo-Daten für 1009 m über die letzten 48 Stunden
+(18.11.2026, 48 Stundenwerte):
+
+| Modell                  | Temperatur, mittlere Abweichung | Bias     | Wind, mittlere Abweichung |
+| ----------------------- | ------------------------------- | -------- | ------------------------- |
+| best_match (= ICON-D2)  | 4,2 °C                          | +4,2 °C  | 6,0 km/h                  |
+| ICON-EU                 | 5,2 °C                          | +5,2 °C  | 5,1 km/h                  |
+| ECMWF IFS               | 2,9 °C                          | +2,8 °C  | 3,3 km/h                  |
+| **GeoSphere Seamless**  | **1,1 °C**                      | −0,9 °C  | 3,8 km/h                  |
+| AROME France HD         | 4,7 °C                          | +4,7 °C  | 3,1 km/h                  |
+
+Einschränkungen: nur eine Talstation, nur 48 Stunden, nur Temperatur und Wind (keine Station
+misst auf Pistenhöhe in der Nähe), Modellwerte mit kurzer Vorlaufzeit. Das ist ein Hinweis, kein
+Beweis; bei kalter Talluft (Inversion) liegen Modelle oft zu warm. Ein Vergleich über längere
+Zeit (z. B. mit den Hahnenkamm-Stationen auf 1.667–1.794 m, 26 km entfernt) wäre aussagekräftiger.
+
+GeoSphere Seamless liefert alle von der App genutzten Werte für 7 Tage (Temperatur, gefühlt, Wetter,
+Wind, Böen, Niederschlagswahrscheinlichkeit, Schneefall, Schneehöhe, Sonnenzeiten).
+
+**Echte Messwerte:** Die offene TAWES-Schnittstelle der GeoSphere Austria
+(`dataset.api.hub.geosphere.at`, CC BY 4.0) liefert gemessene Temperatur, Wind, Niederschlag, Feuchte,
+Druck und Sonnenschein; die nächste Station ist KRIMML (Tal, 1009 m). Eine Schneehöhe ist im
+10-Minuten-Datensatz nicht enthalten. Noch nicht angebunden.
+
+**Anzeige:** Die Beschriftungen „Modellwetter/Modellprognose/Modellwerte“ wurden auf Wunsch aus der
+Oberfläche entfernt. Die Quellenangabe bleibt (Open-Meteo, GeoSphere Austria, CC BY 4.0, unter
+„Datenstand“ und „Datenquellen und Hinweise“); dort steht auch, dass die Schneehöhe berechnet und
+nicht gemessen ist.

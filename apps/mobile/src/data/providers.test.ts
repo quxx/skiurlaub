@@ -65,3 +65,41 @@ it('weist unvollständige API-Antworten zurück', async () => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}')));
   await expect(statusLiveProvider.getStatus()).rejects.toThrow();
 });
+
+it('fragt zuerst das GeoSphere-Austria-Modell ab', async () => {
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValue(new Response(JSON.stringify(weatherResponse())));
+  vi.stubGlobal('fetch', fetchMock);
+  await openMeteoProvider.getWeather();
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  expect(String(fetchMock.mock.calls[0][0])).toContain(
+    'models=geosphere_seamless',
+  );
+});
+
+it('fällt bei einem Fehler des GeoSphere-Modells auf das Standardmodell zurück', async () => {
+  const fetchMock = vi.fn(async (url: string | URL | Request) =>
+    String(url).includes('models=geosphere_seamless')
+      ? new Response('kaputt', { status: 500 })
+      : new Response(JSON.stringify(weatherResponse())),
+  );
+  vi.stubGlobal('fetch', fetchMock);
+  const result = await openMeteoProvider.getWeather();
+  expect(result.data?.forecast).toHaveLength(7);
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+  expect(String(fetchMock.mock.calls[1][0])).not.toContain('models=');
+});
+
+it('startet bei einem Rate Limit keinen zweiten Abruf mit dem Standardmodell', async () => {
+  const fetchMock = vi.fn(
+    async () =>
+      new Response('zu viele Anfragen', {
+        status: 429,
+        headers: { 'Retry-After': '600' },
+      }),
+  );
+  vi.stubGlobal('fetch', fetchMock);
+  await expect(openMeteoProvider.getWeather()).rejects.toThrow();
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+});

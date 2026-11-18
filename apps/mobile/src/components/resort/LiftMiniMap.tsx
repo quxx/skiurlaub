@@ -18,6 +18,7 @@ import {
   Waypoints,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { AnalyzedPoint, Segment } from '@skiurlaub/gps';
 
 import {
   arenaTourFromHochkrimml,
@@ -39,10 +40,26 @@ import type {
   ResortWebcam,
 } from '@/types/resort';
 
+// A recorded GPS track drawn over the resort map (optional).
+export type TrackOverlay = {
+  points: AnalyzedPoint[];
+  segments: Segment[];
+  selected: number | null;
+};
 type LiftMiniMapProps = {
   lifts: LiftStatus[];
   pisteStatuses: PisteStatus[];
   webcams: ResortWebcam[];
+  track?: TrackOverlay;
+  /** Smaller map without tour overview and links (used inside other pages). */
+  compact?: boolean;
+};
+
+const trackColors: Record<Segment['kind'], string> = {
+  lift: '#f59e0b',
+  run: '#22d3ee',
+  flat: '#94a3b8',
+  pause: '#64748b',
 };
 
 const mapBounds = L.latLngBounds([47.192, 11.885], [47.272, 12.165]);
@@ -70,12 +87,16 @@ export function LiftMiniMap({
   lifts,
   pisteStatuses,
   webcams,
+  track,
+  compact = false,
 }: LiftMiniMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const liftLayerRef = useRef<L.LayerGroup | null>(null);
   const pisteLayerRef = useRef<L.LayerGroup | null>(null);
   const webcamLayerRef = useRef<L.LayerGroup | null>(null);
+  const trackLayerRef = useRef<L.LayerGroup | null>(null);
+  const fittedTrackRef = useRef<AnalyzedPoint[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pistes, setPistes] = useState<PisteGeometry[]>([]);
   const [pisteLoadState, setPisteLoadState] = useState<
@@ -83,7 +104,8 @@ export function LiftMiniMap({
   >('loading');
   const [showPistes, setShowPistes] = useState(true);
   const [showLifts, setShowLifts] = useState(true);
-  const [showWebcams, setShowWebcams] = useState(true);
+  // The embedded track map shows only lifts and pistes: no webcams, no Arena Tour.
+  const [showWebcams, setShowWebcams] = useState(!compact);
   const [arenaTourOnly, setArenaTourOnly] = useState(false);
   const [selectedPisteId, setSelectedPisteId] = useState<string | null>(null);
   const statuses = useMemo(() => createLiftStatusIndex(lifts), [lifts]);
@@ -117,11 +139,18 @@ export function LiftMiniMap({
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom: 19,
     }).addTo(map);
+    // LiftRadar asks for credit for the map tile data (OpenSkiData, OpenStreetMap, ODbL).
+    map.attributionControl.addAttribution(
+      'Pisten &amp; Lifte: <a href="https://liftradar.eu/de/api">LiftRadar</a>, OpenSkiData',
+    );
 
     const pistePane = map.createPane('pistes');
     pistePane.style.zIndex = '390';
     const webcamPane = map.createPane('webcams');
     webcamPane.style.zIndex = '450';
+    const trackPane = map.createPane('track');
+    trackPane.style.zIndex = '440';
+    trackLayerRef.current = L.layerGroup().addTo(map);
     pisteLayerRef.current = L.layerGroup().addTo(map);
     liftLayerRef.current = L.layerGroup().addTo(map);
     webcamLayerRef.current = L.layerGroup().addTo(map);
@@ -138,6 +167,8 @@ export function LiftMiniMap({
       liftLayerRef.current = null;
       pisteLayerRef.current = null;
       webcamLayerRef.current = null;
+      trackLayerRef.current = null;
+      fittedTrackRef.current = null;
     };
   }, []);
 
@@ -299,6 +330,45 @@ export function LiftMiniMap({
   }, [arenaTourOnly, pisteStatusIndex, pistes, selectedPisteId, showPistes]);
 
   useEffect(() => {
+    const group = trackLayerRef.current;
+    const map = mapRef.current;
+    if (!group || !map) return;
+    group.clearLayers();
+    if (!track || track.points.length < 2) return;
+    const bounds = L.latLngBounds([]);
+    track.segments.forEach((segment, index) => {
+      const latlngs = track.points
+        .slice(segment.startIndex, segment.endIndex + 1)
+        .map((point) => [point.lat, point.lon] as [number, number]);
+      if (latlngs.length < 2) return;
+      bounds.extend(latlngs);
+      const chosen = track.selected === index;
+      const dimmed = track.selected !== null && !chosen;
+      // White casing keeps the route readable on top of coloured pistes and lifts.
+      L.polyline(latlngs, {
+        pane: 'track',
+        color: '#ffffff',
+        weight: chosen ? 9 : 6,
+        opacity: dimmed ? 0.35 : 0.9,
+        interactive: false,
+      }).addTo(group);
+      L.polyline(latlngs, {
+        pane: 'track',
+        color: trackColors[segment.kind],
+        weight: chosen ? 6 : 3.5,
+        opacity: dimmed ? 0.5 : 1,
+        dashArray: segment.kind === 'pause' ? '2 6' : undefined,
+        interactive: false,
+      }).addTo(group);
+    });
+    // Fit once per recording, not on every selection change.
+    if (fittedTrackRef.current !== track.points && bounds.isValid()) {
+      fittedTrackRef.current = track.points;
+      map.fitBounds(bounds, { padding: [28, 28], maxZoom: 16 });
+    }
+  }, [track]);
+
+  useEffect(() => {
     const group = webcamLayerRef.current;
     if (!group) return;
     group.clearLayers();
@@ -354,7 +424,7 @@ export function LiftMiniMap({
     <div className="map-view">
       <div className="map-surface relative overflow-hidden rounded-2xl border border-white/10 bg-[#071522]">
         <div
-          className="lift-leaflet-map h-[32rem] w-full sm:h-[38rem]"
+          className={`lift-leaflet-map h-[32rem] w-full sm:h-[38rem]${compact ? ' track-map' : ''}`}
           ref={containerRef}
           aria-label={
             arenaTourOnly
@@ -396,28 +466,30 @@ export function LiftMiniMap({
           className="map-layer-controls absolute top-3 right-3 z-[500] flex max-w-[calc(100%_-_4.5rem)] flex-wrap justify-end gap-1.5 rounded-xl border border-white/10 bg-midnight-950/88 p-2 shadow-xl backdrop-blur-md"
           aria-label="Kartenebenen"
         >
-          <button
-            aria-pressed={arenaTourOnly}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-bold transition ${
-              arenaTourOnly
-                ? 'border-amber-300/40 bg-amber-300/15 text-amber-200'
-                : 'border-white/10 bg-white/5 text-ice-200/70 hover:border-glacier-300/35 hover:bg-white/10 hover:text-ice-50'
-            }`}
-            onClick={() => {
-              const nextValue = !arenaTourOnly;
-              setArenaTourOnly(nextValue);
-              setSelectedId(null);
-              setSelectedPisteId(null);
-              if (nextValue) {
-                setShowLifts(true);
-                setShowPistes(true);
-              }
-            }}
-            type="button"
-          >
-            <Waypoints size={13} aria-hidden="true" />
-            Arena Tour
-          </button>
+          {!compact && (
+            <button
+              aria-pressed={arenaTourOnly}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-bold transition ${
+                arenaTourOnly
+                  ? 'border-amber-300/40 bg-amber-300/15 text-amber-200'
+                  : 'border-white/10 bg-white/5 text-ice-200/70 hover:border-glacier-300/35 hover:bg-white/10 hover:text-ice-50'
+              }`}
+              onClick={() => {
+                const nextValue = !arenaTourOnly;
+                setArenaTourOnly(nextValue);
+                setSelectedId(null);
+                setSelectedPisteId(null);
+                if (nextValue) {
+                  setShowLifts(true);
+                  setShowPistes(true);
+                }
+              }}
+              type="button"
+            >
+              <Waypoints size={13} aria-hidden="true" />
+              Arena Tour
+            </button>
+          )}
           <button
             aria-pressed={showLifts}
             className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-bold text-ice-200/70 transition hover:border-glacier-300/35 hover:bg-white/10 hover:text-ice-50"
@@ -447,7 +519,7 @@ export function LiftMiniMap({
                 ? 'Pisten nicht verfügbar'
                 : 'Pisten'}
           </button>
-          {webcams.length > 0 && !arenaTourOnly ? (
+          {webcams.length > 0 && !arenaTourOnly && !compact ? (
             <button
               aria-pressed={showWebcams}
               className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-bold text-ice-200/70 transition hover:border-glacier-300/35 hover:bg-white/10 hover:text-ice-50"
@@ -527,14 +599,17 @@ export function LiftMiniMap({
         ) : null}
       </div>
 
-      {arenaTourOnly ? (
+      {arenaTourOnly && !compact ? (
         <ArenaTourOverview
           liftStatuses={statuses}
           pisteStatuses={pisteStatuses}
         />
       ) : null}
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs leading-5 text-ice-200/35">
+      <div
+        className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs leading-5 text-ice-200/35"
+        hidden={compact}
+      >
         <a
           className="inline-flex items-center gap-1.5 text-glacier-200/75 transition hover:text-glacier-200"
           href="https://zillertal.intermaps.com/zillertalarena"

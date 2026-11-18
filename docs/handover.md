@@ -5,6 +5,58 @@ tatsächlichen Stand, ohne den Chatverlauf zu brauchen. Neueste Einträge oben.
 Maßgebliche Vorgaben bleiben der Master-Prompt (Phasen 0–11, immer nur eine
 Phase, danach Review/Freigabe) und die Dokumente in `docs/`.
 
+## Eintrag 2026-11-18 (11) – Claude Code: Wettermodell GeoSphere, "Modell"-Texte entfernt
+
+Auf Nutzerwunsch: genauere Wetterwerte und Streichen aller "Modellprognose/Modellwetter"-Beschriftungen. Open-Meteo wird jetzt mit `models=geosphere_seamless` abgefragt (Fallback Standardmodell; kein zweiter Abruf bei Rate Limit). Begründung: 48-h-Vergleich mit der GeoSphere-Station Krimml (Temperatur-Abweichung 1,1 °C statt 4,2 °C beim bisherigen Standardmodell; nur eine Talstation, siehe docs/phase-5-wetterdaten.md). Dabei Fehler in `remote.ts` behoben: Beim Weiterreichen eines Fehlers ohne Cache ging `retryAt` verloren. UI-Texte angepasst (Quellenangabe CC BY bleibt). App 71 Tests. Nicht committet.
+
+## Eintrag 2026-11-18 (10) – Claude Code: LiftRadar-Nutzung bestätigt
+
+Der Nutzer verwies auf https://liftradar.eu/de/api; gelesen: Daten frei lesbar ohne Schlüssel, unsere Kachel-URLs (`/ski/v1/10/<x>/<y>.json`) dokumentiert, Kacheldaten ODbL, Quellenangabe nötig, Abruf wöchentlich/stündlich genügt, Kacheln mit 7 Tage Cache und ETag. Umgesetzt: Attribution „Pisten & Lifte: LiftRadar, OpenSkiData“ in der Leaflet-Karte (`LiftMiniMap.tsx`) und angepasster Hinweistext in `TrackDetailPage.tsx`; Doku (phase-9-gps.md, phase-2-dashboard.md) von „ungeklärt“ auf „erlaubt mit Auflagen“ geändert. Offen/optional: LiftRadar über die Nutzung informieren (Kontakt auf der Seite). Nicht committet.
+
+## Eintrag 2026-11-18 (9) – Claude Code: Pistenzuordnung (Weg 2: LiftRadar-Quelle)
+
+Nutzerentscheidung: bestehende LiftRadar-Pistendaten verwenden (Rechtslage ungeklärt, siehe phase-9-gps.md). Neu: `packages/gps/src/match-pistes.ts` (+5 Tests, GPS gesamt 29), `loadZillertalArenaPistes` mit gemeinsamem Abruf, Anzeige der Pisten je Abfahrt in `TrackDetailPage`. Auf dem Gerät mit synthetischer Fahrt entlang echter Pistenlinien geprüft. Auf dem Handy liegen zwei **synthetische Demo-Aufzeichnungen** (Gerlos-Gondeln, Zell-Pisten); in der App löschbar. Nicht committet.
+
+## Eintrag 2026-11-18 (8) – Claude Code: Höhenprofil, Liftzuordnung, Route auf der Skikarte
+
+Auf Nutzerwunsch: GPS-Track über die Skikarte legen, Lifte (und Pisten) zuordnen, Höhenprofil mit
+Liften/Pisten. Umgesetzt: Höhenprofil, Route auf der Karte, **Lift**zuordnung. **Pisten offen**
+(Datenlizenz, siehe [phase-9-gps.md](phase-9-gps.md#erweiterte-auswertung-höhenprofil-liftzuordnung-route-auf-der-skikarte)).
+
+- `packages/gps/src/match.ts` (+ Test, 24 GPS-Tests gesamt), `components/track/ElevationChart.tsx`
+  (+ Test), `data/resort/lift-labels.ts`, `LiftMiniMap.tsx` um `track`/`compact` erweitert,
+  `TrackDetailPage.tsx` neu aufgebaut (Diagramm, Karte, verknüpfte Abschnittsliste),
+  `TrackMap.tsx` entfernt. App 68 Tests grün.
+- Auf dem Gerät liegt eine **synthetische Demo-Aufzeichnung** (Gondeln Dorfbahn Gerlos I/II) in der
+  Debug-App, eingespielt per `adb push` + `run-as` (nur Debug-Builds); in der App unter Skitage löschbar.
+  Hinweis für Git-Bash: `MSYS_NO_PATHCONV=1` setzen, sonst werden `/data/...`-Pfade umgeschrieben.
+- Nicht committet.
+
+## Eintrag 2026-11-18 (7) – Claude Code: Worker veröffentlicht, CPU-Umbau
+
+Worker veröffentlicht (Versionen `9e43d2ec`, danach `c2d40062`). Live-Test am Samsung mit echter
+Anmeldung: Upload funktioniert. Befund: erster Upload (19 Punkte) kostete **8 ms CPU** bei 10 ms Limit
+im Free-Plan → Migration `0005_gps_tracks_text.sql` (Tabelle ersetzt, 1 Test-Zeile verloren), Server
+speichert den komprimierten Track als undurchsichtigen Base64-Text und entpackt nicht mehr
+(`apps/api/src/gps-tracks.ts`; `GET …/data` liefert JSON). API-Tests angepasst (39 grün). Danach
+gemessen: Upload 2 ms warm / 6 ms kalt. Details in [phase-9-gps.md](phase-9-gps.md).
+Offen: Test mit einem echten, langen Skitag (CPU und Auswertung), Akku-Abnahme, Gruppenfreigabe.
+Hinweis: Das Handy hat einen PIN-Sperrbildschirm; Geräteskripte brauchen ein entsperrtes Display
+(`adb shell wm dismiss-keyguard` genügt nicht). Nicht committet: Migration 0005, gps-tracks.ts,
+Tests, Doku.
+
+## Eintrag 2026-11-18 (6) – Claude Code: Migrationen 0003/0004 produktiv
+
+Phase 4 wurde vom Nutzer committet. Migrationen 0003 und 0004 per
+`wrangler d1 migrations apply DB --remote --config wrangler.production.jsonc` angewendet
+(vorher `migrations list`: genau diese beiden ausstehend; Time-Travel-Bookmark
+`00000010-00000000-00005127-80a92f26d4fd37aa37f5f9795a15566e` notiert). Danach geprüft: alle Tabellen
+vorhanden, 1 Nutzer / 1 Sitzung unverändert, `gps_tracks` und `skiing_days` leer.
+**Der Worker ist noch nicht veröffentlicht** (neue Endpunkte `/skiline/import`, `/skiing-days`,
+`/gps-tracks` sind produktiv noch 404). Nächster Schritt nach Freigabe:
+`pnpm --filter @skiurlaub/api exec wrangler deploy --config wrangler.production.jsonc`, dann Upload
+am Gerät testen und Worker-CPU messen.
+
 ## Eintrag 2026-11-18 (5) – Claude Code: Phase 5 gestrichen, GPS-Tracking
 
 Entscheidungen des Nutzers: Phase 5 (Skipässe/NFC) **gestrichen**, da keine Skiline-Freigabe zu

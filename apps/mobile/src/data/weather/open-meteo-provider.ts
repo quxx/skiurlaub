@@ -2,7 +2,11 @@ import { z } from 'zod';
 import { tripConfig } from '@/app/trip-config';
 import type { WeatherData, WeatherProvider } from '@/data/weather/provider';
 import type { DataEnvelope } from '@/types/data';
-import { createRemoteProvider, sourceFreshness } from '@/data/remote';
+import {
+  createRemoteProvider,
+  ProviderError,
+  sourceFreshness,
+} from '@/data/remote';
 import { localDateKey } from '@/data/date-time';
 
 const timestamp = z.number().int().min(0).max(253402300799);
@@ -73,7 +77,7 @@ export const openMeteoSchema = z
   );
 type OpenMeteoResponse = z.infer<typeof openMeteoSchema>;
 
-export function buildWeatherUrl(): string {
+export function buildWeatherUrl(model?: string): string {
   const url = new URL('https://api.open-meteo.com/v1/forecast');
   const { latitude, longitude, elevation } = tripConfig.weatherLocation;
   for (const [key, value] of Object.entries({
@@ -86,6 +90,7 @@ export function buildWeatherUrl(): string {
     temperature_unit: 'celsius',
     wind_speed_unit: 'kmh',
     precipitation_unit: 'mm',
+    ...(model ? { models: model } : {}),
     current:
       'temperature_2m,apparent_temperature,snow_depth,weather_code,wind_speed_10m,wind_gusts_10m,is_day',
     daily:
@@ -148,15 +153,41 @@ function normalize(
   };
 }
 
+const cacheBase = `${tripConfig.weatherLocation.latitude}:${tripConfig.weatherLocation.longitude}:${tripConfig.weatherLocation.elevation}:${tripConfig.timeZone}`;
+const shared = {
+  schema: openMeteoSchema,
+  ttl: 30 * 60_000,
+  maxCacheAge: 48 * 60 * 60_000,
+  normalize,
+};
+
+// GeoSphere Austria (the national weather service; 1 km model for the first days, then ECMWF)
+// was clearly closer to the measurements at the Krimml station than Open-Meteo's default
+// model in a 48 h check (see docs/phase-5-wetterdaten.md). Open-Meteo's default model is the
+// fallback if the GeoSphere request fails.
+const GEOSPHERE_MODEL = 'geosphere_seamless';
+const geosphere = createRemoteProvider({
+  ...shared,
+  key: `skiurlaub:weather:geosphere:v1:${cacheBase}`,
+  url: () => buildWeatherUrl(GEOSPHERE_MODEL),
+});
+const defaultModel = createRemoteProvider({
+  ...shared,
+  key: `skiurlaub:weather:v4:${cacheBase}`,
+  url: () => buildWeatherUrl(),
+});
+
 export const openMeteoProvider: WeatherProvider = {
-  getWeather: createRemoteProvider({
-    key: `skiurlaub:weather:v4:${tripConfig.weatherLocation.latitude}:${tripConfig.weatherLocation.longitude}:${tripConfig.weatherLocation.elevation}:${tripConfig.timeZone}`,
-    url: buildWeatherUrl,
-    schema: openMeteoSchema,
-    ttl: 30 * 60_000,
-    maxCacheAge: 48 * 60 * 60_000,
-    normalize,
-  }),
+  getWeather: async (signal, options) => {
+    try {
+      return await geosphere(signal, options);
+    } catch (error) {
+      // Rate limits and cancellations must not trigger a second request.
+      if (signal?.aborted || (error instanceof ProviderError && error.retryAt))
+        throw error;
+      return defaultModel(signal, options);
+    }
+  },
 };
 export function weatherLocalDate(time: string) {
   return localDateKey(time, tripConfig.timeZone);

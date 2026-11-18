@@ -1,5 +1,4 @@
 import { readFile, readdir } from 'node:fs/promises';
-import { gzipSync } from 'node:zlib';
 import { URL } from 'node:url';
 import {
   analyzeTrack,
@@ -148,8 +147,10 @@ describe('GPS-Tracks (Upload)', () => {
     const data = await call(`/gps-tracks/${list.tracks[0].id}/data`, {
       cookie,
     });
-    expect(data.headers.get('content-type')).toBe('application/octet-stream');
-    const back = new Uint8Array(await data.arrayBuffer());
+    expect(data.status).toBe(200);
+    const stored = ((await data.json()) as { data: string }).data;
+    expect(stored).toBe(upload.data);
+    const back = Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
     expect(Array.from(back)).toEqual(Array.from(bytes));
     expect(await decompressTrack(back)).toHaveLength(points.length);
   });
@@ -188,27 +189,12 @@ describe('GPS-Tracks (Upload)', () => {
         400,
       ],
       [
-        'falsche Punktzahl',
-        { ...upload, pointCount: upload.pointCount + 1 },
-        400,
-      ],
-      [
         'Statistik außerhalb der Grenzen',
         { ...upload, stats: { ...upload.stats, liftAscentM: 1e9 } },
         400,
       ],
       ['zusätzliche Felder', { ...upload, userId: 'x' }, 400],
       ['fehlende Felder', { startedAt: 1 }, 400],
-      [
-        'Zip-Bombe',
-        {
-          ...upload,
-          data: bytesToBase64(
-            new Uint8Array(gzipSync(Buffer.alloc(20_000_000))),
-          ),
-        },
-        400,
-      ],
     ];
     for (const [name, data, status] of bad)
       expect((await put(cookie, id, data)).status, name).toBe(status);
@@ -292,13 +278,13 @@ describe('GPS-Tracks (Upload)', () => {
     const insert = (userId: string, size: number) =>
       db
         .prepare(
-          "INSERT INTO gps_tracks(id,user_id,client_track_id,started_at,point_count,format_version,algorithm_version,data,checksum,stats_json,created_at) VALUES('x',?,'11111111-1111-1111-1111-111111111111',1,2,1,1,zeroblob(?),'c','{}',1)",
+          "INSERT INTO gps_tracks(id,user_id,client_track_id,started_at,point_count,format_version,algorithm_version,data_b64,stats_json,created_at) VALUES('x',?,'11111111-1111-1111-1111-111111111111',1,2,1,1,replace(hex(zeroblob(?)),'0','A'),'{}',1)",
         )
         .bind(userId, size)
         .run();
     await expect(insert('gibt-es-nicht', 10)).rejects.toThrow();
     const cookie = await login();
     const me = (await (await call('/me', { cookie })).json()) as { id: string };
-    await expect(insert(me.id, 1_000_001)).rejects.toThrow();
+    await expect(insert(me.id, 700_001)).rejects.toThrow();
   });
 });

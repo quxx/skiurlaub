@@ -5,3 +5,5 @@ export * from './altitude';
 export * from './analyze';
 export * from './codec';
 export * from './synthetic';
+export * from './match';
+export * from './match-pistes';

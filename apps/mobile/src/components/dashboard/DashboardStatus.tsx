@@ -69,7 +69,7 @@ export function DashboardStatus() {
             label: 'Wetter',
             value: weather,
             href: 'https://open-meteo.com/',
-            credit: 'Open-Meteo · CC BY 4.0 · Modellwerte, keine Messung',
+            credit: 'Open-Meteo · GeoSphere Austria · CC BY 4.0',
           },
           {
             label: 'Resortstatus',

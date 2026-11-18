@@ -44,11 +44,12 @@ export function TripInformation() {
       <details>
         <summary>Datenquellen und Hinweise</summary>
         <p>
-          Wetter, Schneedecke und Neuschnee sind Modellwerte von{' '}
+          Wetter, Schneedecke und Neuschnee kommen von{' '}
           <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">
             Open-Meteo (CC BY 4.0)
-          </a>
-          . Eine Prognose ist keine gemessene Schneehöhe.
+          </a>{' '}
+          mit Daten der GeoSphere Austria. Die Schneehöhe ist berechnet, nicht
+          gemessen.
         </p>
         <p>
           Lift- und Pistenstatus stammen von{' '}

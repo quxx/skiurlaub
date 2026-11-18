@@ -29,9 +29,7 @@ export function ForecastPreview() {
     <section className="forecast-section shell" id="forecast">
       <div className="list-section-heading">
         <h2>Wetter · 7 Tage</h2>
-        <StatusBadge tone={stale ? 'warning' : 'muted'}>
-          {stale ? 'Veraltet' : 'Modellprognose'}
-        </StatusBadge>
+        {stale && <StatusBadge tone="warning">Veraltet</StatusBadge>}
       </div>
       {!available && (
         <p className="inline-message" role="status">
@@ -40,11 +38,7 @@ export function ForecastPreview() {
             : 'Die Wetterquelle ist derzeit nicht verfügbar. Bitte nutze die Aktualisierung im Dashboard.'}
         </p>
       )}
-      <div
-        className="forecast-strip"
-        role="list"
-        aria-label="7-Tage-Modellprognose"
-      >
+      <div className="forecast-strip" role="list" aria-label="7-Tage-Prognose">
         {forecast.map((day, index) => {
           const view = weatherPresentation(day.weatherCode);
           const Icon = view.icon;
@@ -77,7 +71,7 @@ export function ForecastPreview() {
                   cm
                 </span>
                 <strong>
-                  {Math.round(day.temperatureMaxCelsius)}°{' '}
+                  <span>{Math.round(day.temperatureMaxCelsius)}°</span>
                   <small>{Math.round(day.temperatureMinCelsius)}°</small>
                 </strong>
                 <ChevronDown
@@ -138,7 +132,6 @@ export function ForecastPreview() {
           );
         })}
       </div>
-      <p className="source-caption">Modellprognose · keine Messung</p>
       <a
         className="resort-row action-row livecam-row"
         href="https://www.zillertalarena.com/info-service/livecams-wetter/livecams/"

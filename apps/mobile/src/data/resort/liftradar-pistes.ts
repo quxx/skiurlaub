@@ -47,12 +47,31 @@ const includedAreas = new Set([
   'Zillertal Arena',
 ]);
 
-export async function loadZillertalArenaPistes(
+// One shared request per app session: the resort map and the GPS evaluation use the same
+// tiles. A failed load is not cached. Callers can still abandon waiting via their signal.
+let shared: Promise<PisteGeometry[]> | null = null;
+export function loadZillertalArenaPistes(
   signal?: AbortSignal,
 ): Promise<PisteGeometry[]> {
+  shared ??= fetchPistes().catch((error: unknown) => {
+    shared = null;
+    throw error;
+  });
+  const request = shared;
+  if (!signal) return request;
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) return reject(signal.reason);
+    signal.addEventListener('abort', () => reject(signal.reason), {
+      once: true,
+    });
+    request.then(resolve, reject);
+  });
+}
+
+async function fetchPistes(): Promise<PisteGeometry[]> {
   const tiles = await Promise.all(
     tileUrls.map(async (url) => {
-      return skiTileSchema.parse(await fetchJson(url, signal));
+      return skiTileSchema.parse(await fetchJson(url));
     }),
   );
 

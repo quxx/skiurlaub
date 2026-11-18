@@ -72,6 +72,7 @@ Schritte und Hinweise: [phase-4-skiline.md](phase-4-skiline.md#betrieb--deployme
 
 ## Migration 0004 (GPS-Tracks)
 
-`0004_gps_tracks.sql` ist lokal und in Tests angewendet, auf der Produktions-D1 **noch nicht**
-(ebenso wenig 0003). Schritte, Kapazität (D1 Free: 500 MB pro Datenbank, 5 GB pro Konto, 2 MB pro Zeile)
+`0003_skiing_days.sql` und `0004_gps_tracks.sql` wurden am 18.11.2026 auf der Produktions-D1 angewendet
+(Wiederherstellungspunkt vorher: Time-Travel-Bookmark `00000010-00000000-00005127-80a92f26d4fd37aa37f5f9795a15566e`).
+Zusätzlich `0005_gps_tracks_text.sql` (Umbau auf Base64-Text wegen des 10-ms-CPU-Limits). Der Worker (Version `c2d40062`) ist veröffentlicht. Schritte, Kapazität (D1 Free: 500 MB pro Datenbank, 5 GB pro Konto, 2 MB pro Zeile)
 und offene CPU-Frage: [phase-9-gps.md](phase-9-gps.md).

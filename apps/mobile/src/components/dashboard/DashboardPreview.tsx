@@ -138,7 +138,6 @@ export function DashboardPreview() {
               ? `${Math.round(weather.apparentTemperatureCelsius)}°`
               : '—'}
           </span>
-          <span>Modellwetter</span>
         </div>
       </article>
 

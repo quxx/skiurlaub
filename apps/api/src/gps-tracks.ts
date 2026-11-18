@@ -1,30 +1,17 @@
-import { decompressTrack, TrackCodecError } from '@skiurlaub/gps';
 import { gpsStatsSchema, gpsTrackUploadSchema } from '@skiurlaub/shared';
 import type { GpsTrackSummary } from '@skiurlaub/shared';
 import { rateLimit } from './auth';
 import type { Env } from './env';
-import { body, HttpError } from './http';
+import { body, HttpError, json } from './http';
 import type { CurrentSession } from './sessions';
 
-const MAX_BLOB_BYTES = 1_000_000;
 const MAX_UPLOAD_BYTES = 1_500_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+// gzip magic (1f 8b 08) in base64 starts with "H4sI"; the rest must be plain base64.
+const GZIP_BASE64 = /^H4sI[A-Za-z0-9+/]*={0,2}$/;
 
 const notFound = () =>
   new HttpError(404, 'NOT_FOUND', 'Die Ressource ist nicht verfügbar.');
-
-async function sha256(bytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
-  return Array.from(new Uint8Array(digest), (b) =>
-    b.toString(16).padStart(2, '0'),
-  ).join('');
-}
-
-function toBytes(value: unknown): Uint8Array {
-  // D1 returns BLOBs as ArrayBuffer or number[] depending on the runtime.
-  if (Array.isArray(value)) return new Uint8Array(value as number[]);
-  return new Uint8Array(value as ArrayBuffer);
-}
 
 type Row = {
   id: string;
@@ -49,8 +36,12 @@ const summary = (row: Row): GpsTrackSummary => ({
 const columns =
   'id, client_track_id, started_at, ended_at, point_count, stats_json, created_at, revision';
 
-// Idempotent per (user, clientTrackId): the same recording uploaded again with the same
-// content returns the stored row; changed content raises the revision.
+// The Worker stores the compressed track as an opaque base64 text and does NOT unpack it:
+// the Free plan allows only 10 ms CPU per request (decoding a full ski day exceeded that
+// budget). Consequently point count and stats are as claimed by the owner's device, and
+// whoever reads a track later (the owner now, group members in a later phase) must decode it
+// defensively - the codec in packages/gps enforces size and point limits.
+// Idempotent per (user, clientTrackId): identical content returns the stored row.
 export async function uploadGpsTrack(
   request: Request,
   env: Env,
@@ -62,49 +53,16 @@ export async function uploadGpsTrack(
   const input = gpsTrackUploadSchema.parse(
     await body(request, MAX_UPLOAD_BYTES),
   );
-  let bytes: Uint8Array;
-  try {
-    bytes = Uint8Array.from(atob(input.data), (char) => char.charCodeAt(0));
-  } catch {
+  if (!GZIP_BASE64.test(input.data))
     throw new HttpError(400, 'INVALID_TRACK', 'Die Aufzeichnung ist ungültig.');
-  }
-  if (bytes.length > MAX_BLOB_BYTES)
-    throw new HttpError(
-      413,
-      'TRACK_TOO_LARGE',
-      'Die Aufzeichnung ist zu groß.',
-    );
-  // The blob must really be a track in our format (bounded decompression) and agree
-  // with the declared metadata.
-  let points;
-  try {
-    points = await decompressTrack(bytes);
-  } catch (error) {
-    if (error instanceof TrackCodecError)
-      throw new HttpError(
-        400,
-        'INVALID_TRACK',
-        'Die Aufzeichnung ist ungültig.',
-      );
-    throw error;
-  }
-  if (points.length !== input.pointCount || points.length < 2)
-    throw new HttpError(400, 'INVALID_TRACK', 'Die Aufzeichnung ist ungültig.');
-  const checksum = await sha256(bytes);
-  const now = Date.now();
-  const arrayBuffer = bytes.buffer.slice(
-    bytes.byteOffset,
-    bytes.byteOffset + bytes.byteLength,
-  ) as ArrayBuffer;
   await env.DB.prepare(
-    `INSERT INTO gps_tracks(id, user_id, client_track_id, started_at, ended_at, point_count, format_version, algorithm_version, alt_ref, data, checksum, stats_json, stats_source, created_at, revision)
-    VALUES(?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, 'client', ?, 1)
+    `INSERT INTO gps_tracks(id, user_id, client_track_id, started_at, ended_at, point_count, format_version, algorithm_version, alt_ref, data_b64, stats_json, stats_source, created_at, revision)
+    VALUES(?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, 'client', ?, 1)
     ON CONFLICT(user_id, client_track_id) DO UPDATE SET
       started_at = excluded.started_at, ended_at = excluded.ended_at, point_count = excluded.point_count,
-      algorithm_version = excluded.algorithm_version, alt_ref = excluded.alt_ref, data = excluded.data,
-      checksum = excluded.checksum, stats_json = excluded.stats_json,
-      revision = gps_tracks.revision + 1
-    WHERE gps_tracks.checksum <> excluded.checksum OR gps_tracks.stats_json <> excluded.stats_json`,
+      algorithm_version = excluded.algorithm_version, alt_ref = excluded.alt_ref, data_b64 = excluded.data_b64,
+      stats_json = excluded.stats_json, revision = gps_tracks.revision + 1
+    WHERE gps_tracks.data_b64 <> excluded.data_b64 OR gps_tracks.stats_json <> excluded.stats_json`,
   )
     .bind(
       crypto.randomUUID(),
@@ -115,10 +73,9 @@ export async function uploadGpsTrack(
       input.pointCount,
       input.algorithmVersion,
       input.altRef,
-      arrayBuffer,
-      checksum,
+      input.data,
       JSON.stringify(input.stats),
-      now,
+      Date.now(),
     )
     .run();
   const row = await env.DB.prepare(
@@ -132,7 +89,7 @@ export async function uploadGpsTrack(
 // Strictly the caller's own tracks. Sharing with a group is a later, explicit step.
 export async function listGpsTracks(env: Env, user: CurrentSession) {
   const rows = await env.DB.prepare(
-    `SELECT ${columns} FROM gps_tracks WHERE user_id = ? ORDER BY started_at DESC LIMIT 200`,
+    `SELECT ${columns} FROM gps_tracks WHERE user_id = ? ORDER BY started_at DESC LIMIT 100`,
   )
     .bind(user.id)
     .all<Row>();
@@ -146,18 +103,12 @@ export async function readGpsTrackData(
 ): Promise<Response> {
   if (!UUID.test(id)) throw notFound();
   const row = await env.DB.prepare(
-    'SELECT data FROM gps_tracks WHERE id = ? AND user_id = ?',
+    'SELECT data_b64 FROM gps_tracks WHERE id = ? AND user_id = ?',
   )
     .bind(id, user.id)
-    .first<{ data: unknown }>();
+    .first<{ data_b64: string }>();
   if (!row) throw notFound();
-  return new Response(toBytes(row.data), {
-    headers: {
-      'Content-Type': 'application/octet-stream',
-      'Cache-Control': 'no-store',
-      'X-Content-Type-Options': 'nosniff',
-    },
-  });
+  return json({ data: row.data_b64 });
 }
 
 export async function deleteGpsTrack(

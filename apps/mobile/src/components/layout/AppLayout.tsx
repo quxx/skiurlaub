@@ -75,7 +75,7 @@ export function AppLayout() {
                 aria-current={active ? 'page' : undefined}
               >
                 <span className="nav-icon">
-                  <Icon size={24} strokeWidth={1.8} aria-hidden="true" />
+                  <Icon size={22} strokeWidth={1.8} aria-hidden="true" />
                 </span>
                 <span>{label}</span>
               </Link>

@@ -10,8 +10,8 @@ function useSnow() {
   return envelope?.data ?? null;
 }
 
-// KPI tile: model values stay labelled as "Modell"; measured values live in the
-// official report (no permitted data feed yet).
+// KPI tile: calculated snow depth and fresh snow; measured values live in the official
+// report (no permitted data feed yet).
 export function SnowTile() {
   const snow = useSnow();
   const depth = snow ? Math.round(snow.modelDepthCentimeters) : null;

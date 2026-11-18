@@ -105,14 +105,15 @@ export function createRemoteProvider<S extends z.ZodType, T>(config: {
     const envelope = cached
       ? config.normalize(cached.raw, new Date(cached.storedAt).toISOString())
       : null;
-    const fallback = (message: string) => {
+    const fallback = (message: string, until?: number) => {
       if (envelope)
         return {
           ...envelope,
           freshness: 'stale' as const,
           refreshError: message,
         };
-      throw new ProviderError(message);
+      // Keep the rate-limit deadline so callers can tell "wait" apart from "broken".
+      throw new ProviderError(message, until);
     };
     if (!options.force && cached && now - cached.storedAt < config.ttl)
       return envelope!;
@@ -127,6 +128,7 @@ export function createRemoteProvider<S extends z.ZodType, T>(config: {
     if (retryAt > now)
       return fallback(
         'Die Datenquelle begrenzt Anfragen. Bitte später erneut versuchen.',
+        retryAt,
       );
     // AbortSignals are per caller; TanStack Query deduplicates UI requests.
     if (inFlight && !signal) return inFlight;
@@ -155,6 +157,7 @@ export function createRemoteProvider<S extends z.ZodType, T>(config: {
               : error instanceof Error
                 ? error.message
                 : 'Daten konnten nicht geladen werden.',
+          error instanceof ProviderError ? error.retryAt : undefined,
         );
       } finally {
         inFlight = null;

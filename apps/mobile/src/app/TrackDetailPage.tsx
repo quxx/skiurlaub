@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import {
   analyzeTrack,
   bytesToBase64,
   compressTrack,
+  matchLifts,
+  matchPistes,
   uploadStats,
 } from '@skiurlaub/gps';
 import {
@@ -17,7 +19,15 @@ import { formatDuration } from '@/app/SkitagePage';
 import { tripConfig } from '@/app/trip-config';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
-import { TrackMap } from '@/components/track/TrackMap';
+import { ElevationChart } from '@/components/track/ElevationChart';
+import {
+  ResortDataProvider,
+  useResortData,
+} from '@/components/resort/ResortDataProvider';
+import type { TrackOverlay } from '@/components/resort/LiftMiniMap';
+import { liftRefs, liftTypeLabel } from '@/data/resort/lift-labels';
+import { loadZillertalArenaPistes } from '@/data/resort/liftradar-pistes';
+import type { PisteStretch } from '@skiurlaub/gps';
 import { gps, loadTrack } from '@/data/gps-client';
 
 const warningText: Record<string, string> = {
@@ -26,6 +36,24 @@ const warningText: Record<string, string> = {
   many_points_dropped: 'Viele ungenaue GPS-Punkte wurden verworfen.',
   large_gaps: 'Lange Lücken ohne GPS-Signal.',
 };
+const difficultyWord: Record<string, string> = {
+  novice: 'Übungspiste',
+  easy: 'blau',
+  intermediate: 'rot',
+  advanced: 'schwarz',
+};
+function stretchLabel(stretch: PisteStretch) {
+  if (!stretch.pisteId) return 'abseits bekannter Pisten';
+  const base =
+    stretch.ref && stretch.name
+      ? `Piste ${stretch.ref} · ${stretch.name}`
+      : stretch.ref
+        ? `Piste ${stretch.ref}`
+        : (stretch.name ?? 'Piste');
+  const color = stretch.difficulty ? difficultyWord[stretch.difficulty] : null;
+  return color ? `${base} (${color})` : base;
+}
+
 const kindLabel = {
   lift: 'Lift',
   run: 'Abfahrt',
@@ -45,12 +73,42 @@ const time = (ms: number) =>
     minute: '2-digit',
   }).format(new Date(ms));
 
+const LiftMiniMap = lazy(() =>
+  import('@/components/resort/LiftMiniMap').then((module) => ({
+    default: module.LiftMiniMap,
+  })),
+);
+
+// The recorded route on top of the resort map (lifts, pistes, webcams).
+function SkiMap({ track }: { track: TrackOverlay }) {
+  const { resource } = useResortData();
+  const resort = resource.data?.data;
+  return (
+    <Suspense
+      fallback={
+        <p className="route-loading" role="status">
+          Karte wird geladen …
+        </p>
+      }
+    >
+      <LiftMiniMap
+        lifts={resort?.liftItems ?? []}
+        pisteStatuses={resort?.pisteItems ?? []}
+        webcams={resort?.webcams ?? []}
+        track={track}
+        compact
+      />
+    </Suspense>
+  );
+}
+
 export function TrackDetailPage() {
   const { trackId = '' } = useParams();
   const navigate = useNavigate();
   const client = useQueryClient();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
   const track = useQuery({
     queryKey: ['gps', 'track', trackId],
     queryFn: () => loadTrack(trackId),
@@ -60,6 +118,30 @@ export function TrackDetailPage() {
   const analysis = useMemo(
     () => (track.data ? analyzeTrack(track.data.points) : null),
     [track.data],
+  );
+  // Lifts are matched against known terminals (OSM, ODbL). Pistes use the LiftRadar tiles
+  // the map already loads (shared request); the usage right is documented as unresolved.
+  const matches = useMemo(
+    () =>
+      analysis ? matchLifts(analysis.points, analysis.segments, liftRefs) : [],
+    [analysis],
+  );
+  const pistes = useQuery({
+    queryKey: ['dashboard', 'pistes'],
+    queryFn: () => loadZillertalArenaPistes(),
+    staleTime: Infinity,
+    retry: false,
+  });
+  const pisteMatches = useMemo(
+    () =>
+      analysis && pistes.data
+        ? matchPistes(
+            analysis.points,
+            analysis.segments,
+            pistes.data.filter((piste) => !piste.isArea),
+          )
+        : [],
+    [analysis, pistes.data],
   );
 
   const remote = useQuery({
@@ -169,38 +251,100 @@ export function TrackDetailPage() {
           </div>
         ))}
       </div>
-      <TrackMap points={analysis.points} segments={analysis.segments} />
-      <details className="dashboard-status">
-        <summary className="dashboard-status__summary">
-          <span>Abschnitte ({analysis.segments.length})</span>
-        </summary>
-        <ol className="track-segments">
-          {analysis.segments.map((s) => (
+      {analysis.altitudeSource !== 'none' && analysis.segments.length > 0 && (
+        <ElevationChart
+          points={analysis.points}
+          segments={analysis.segments}
+          selected={selected}
+          onSelect={setSelected}
+        />
+      )}
+      {analysis.points.length >= 2 && (
+        <ResortDataProvider>
+          <SkiMap
+            track={{
+              points: analysis.points,
+              segments: analysis.segments,
+              selected,
+            }}
+          />
+        </ResortDataProvider>
+      )}
+      <ol className="track-timeline" aria-label="Abschnitte">
+        {analysis.segments.map((s, i) => {
+          const match = matches[i];
+          // Position among segments of the same kind (Lift 2, Abfahrt 3 ...).
+          const nth = analysis.segments
+            .slice(0, i + 1)
+            .filter((x) => x.kind === s.kind).length;
+          const title =
+            s.kind === 'lift'
+              ? (match?.name ??
+                (match ? liftTypeLabel[match.type] : null) ??
+                `Lift ${nth}`)
+              : s.kind === 'run'
+                ? `Abfahrt ${nth}`
+                : kindLabel[s.kind];
+          const detail =
+            s.kind === 'lift'
+              ? `+${Math.round(s.ascentM)} m · ${km(s.distanceM)}`
+              : s.kind === 'run'
+                ? `−${Math.round(s.descentM)} m · ${km(s.distanceM)}`
+                : s.kind === 'flat'
+                  ? km(s.distanceM)
+                  : '';
+          return (
             <li key={s.startIndex}>
-              <strong>{kindLabel[s.kind]}</strong>
-              <span>
-                {time(s.startT)} · {formatDuration(s.durationS)}
-              </span>
-              <span>
-                {s.kind === 'pause'
-                  ? ''
-                  : `${km(s.distanceM)} · ${
-                      s.kind === 'lift'
-                        ? `+${Math.round(s.ascentM)} m`
-                        : s.kind === 'run'
-                          ? `−${Math.round(s.descentM)} m`
-                          : ''
-                    }`}
-              </span>
+              <button
+                type="button"
+                data-kind={s.kind}
+                aria-pressed={selected === i}
+                onClick={() => setSelected(selected === i ? null : i)}
+              >
+                <span className="track-timeline__dot" aria-hidden="true" />
+                <span className="track-timeline__title">
+                  <strong>{title}</strong>
+                  {match?.confidence === 'medium' && (
+                    <small>
+                      wahrscheinlich
+                      {match.alternatives.length
+                        ? ` · oder ${match.alternatives.slice(0, 2).join(', ')}`
+                        : ''}
+                    </small>
+                  )}
+                  {s.kind === 'lift' && !match && (
+                    <small>keinem bekannten Lift zugeordnet</small>
+                  )}
+                  {s.kind === 'run' &&
+                    pisteMatches[i]?.map((stretch) => (
+                      <small key={stretch.startIndex}>
+                        {stretchLabel(stretch)}
+                        {stretch.confidence === 'medium'
+                          ? ` · wahrscheinlich${stretch.alternatives.length ? `, oder ${stretch.alternatives.slice(0, 2).join(', ')}` : ''}`
+                          : ''}
+                      </small>
+                    ))}
+                  {s.kind === 'run' && pistes.isError && (
+                    <small>Pisten konnten nicht geladen werden</small>
+                  )}
+                </span>
+                <span className="track-timeline__meta">
+                  {time(s.startT)} · {formatDuration(s.durationS)}
+                  {detail && <br />}
+                  {detail}
+                </span>
+              </button>
             </li>
-          ))}
-        </ol>
-        <small>
-          Lifte, Abfahrten und Höhenmeter werden aus GPS und Luftdruck berechnet
-          und können von offiziellen Skiline-Werten abweichen. Die Auswertung
-          ist experimentell.
-        </small>
-      </details>
+          );
+        })}
+      </ol>
+      <p className="track-note">
+        Lifte und Pisten werden anhand von Kartendaten zugeordnet (OpenSkiData,
+        © OpenStreetMap-Mitwirkende, über LiftRadar); bei dicht
+        beieinanderliegenden Pisten ist die Zuordnung unsicher. Alle Werte
+        stammen aus GPS und Luftdruck, sind experimentell und können von
+        offiziellen Skiline-Werten abweichen.
+      </p>
       <section className="gps-upload" aria-labelledby="gps-upload-title">
         <h3 id="gps-upload-title">Sicherung auf dem Server</h3>
         <p>
